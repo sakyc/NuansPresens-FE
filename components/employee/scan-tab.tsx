@@ -2,19 +2,83 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { Camera, LogIn, LogOut, X } from "lucide-react";
+import { Camera, LogIn, LogOut, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getEmployeeData } from "@/lib/employee-storage";
 
 type ScanMode = "checkin" | "checkout";
+type SubmissionStatus = "idle" | "loading" | "success" | "error";
+
+interface SubmissionResponse {
+  status: "success" | "error";
+  code: number;
+  message: string;
+  data?: Record<string, unknown>;
+}
 
 export function ScanTab() {
   const [scanMode, setScanMode] = useState<ScanMode>("checkin");
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("idle");
+  const [submissionMessage, setSubmissionMessage] = useState<string>("");
+  const [employeeData, setEmployeeData] = useState<ReturnType<typeof getEmployeeData>>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+
+  // Load employee data from localStorage
+  useEffect(() => {
+    const data = getEmployeeData();
+    setEmployeeData(data);
+  }, []);
+
+  const submitPresensi = async (token: string) => {
+    if (!employeeData) {
+      setSubmissionStatus("error");
+      setSubmissionMessage("Data karyawan tidak ditemukan. Silakan login kembali.");
+      return;
+    }
+
+    setSubmissionStatus("loading");
+    try {
+      const response = await fetch("http://localhost:2000/api/presensi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_karyawan: employeeData.id_karyawan,
+          karyawan_shift: employeeData.karyawan_shift,
+          curent_shift: employeeData.karyawan_shift, // ID shift saat ini
+          token: token,
+        }),
+      });
+
+      const data: SubmissionResponse = await response.json();
+
+      if (response.ok && data.status === "success") {
+        setSubmissionStatus("success");
+        setSubmissionMessage(data.message || "Presensi berhasil dicatat!");
+        // Reset after 3 seconds
+        setTimeout(() => {
+          setScannedData(null);
+          setSubmissionStatus("idle");
+          setSubmissionMessage("");
+        }, 3000);
+      } else {
+        setSubmissionStatus("error");
+        setSubmissionMessage(data.message || "Gagal mencatat presensi");
+      }
+    } catch (error) {
+      console.log("[v0] API error:", error);
+      setSubmissionStatus("error");
+      setSubmissionMessage("Terjadi kesalahan saat menghubungi server");
+    }
+  };
 
   const startScanner = async () => {
     setScannedData(null);
+    setSubmissionStatus("idle");
+    setSubmissionMessage("");
     setIsScanning(true);
 
     // Wait for DOM to render the container
@@ -31,10 +95,14 @@ export function ScanTab() {
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          // QR scanned - show result
+          // QR scanned - show result and prepare submission
           setScannedData(decodedText);
           scanner.stop().catch(() => {});
           setIsScanning(false);
+          // Automatically submit after a brief delay
+          setTimeout(() => {
+            submitPresensi(decodedText);
+          }, 500);
         },
         () => {
           // Ignore scan errors (no QR in frame)
@@ -155,11 +223,63 @@ export function ScanTab() {
         )}
       </div>
 
-      {/* Scanned Result */}
+      {/* Scanned Result & Submission Status */}
       {scannedData && (
-        <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
-          <p className="text-xs text-muted-foreground mb-2">Hasil Scan:</p>
-          <p className="text-sm font-mono text-foreground break-all">{scannedData}</p>
+        <div className="space-y-3">
+          {/* Scanned QR Data */}
+          <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
+            <p className="text-xs text-muted-foreground mb-2">QR Code:</p>
+            <p className="text-sm font-mono text-foreground break-all">{scannedData}</p>
+          </div>
+
+          {/* Loading State */}
+          {submissionStatus === "loading" && (
+            <div className="rounded-2xl border border-accent/30 bg-accent/10 p-6 flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 text-accent animate-spin" />
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">Memproses Presensi...</p>
+                <p className="text-xs text-muted-foreground mt-1">Harap tunggu sebentar</p>
+              </div>
+            </div>
+          )}
+
+          {/* Success State */}
+          {submissionStatus === "success" && (
+            <div className="rounded-2xl border border-success/50 bg-success/20 p-6 flex flex-col items-center gap-3">
+              <div className="rounded-full bg-success/30 p-3">
+                <Check className="h-8 w-8 text-success" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-success">{submissionMessage}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {scanMode === "checkin" ? "Selamat datang!" : "Sampai jumpa besok!"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {submissionStatus === "error" && (
+            <div className="rounded-2xl border border-destructive/50 bg-destructive/20 p-6 flex flex-col items-center gap-3">
+              <div className="rounded-full bg-destructive/30 p-3">
+                <AlertCircle className="h-8 w-8 text-destructive" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-destructive">{submissionMessage}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScannedData(null);
+                    setSubmissionStatus("idle");
+                    setSubmissionMessage("");
+                  }}
+                  className="mt-3 rounded-lg bg-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/40 transition-colors"
+                >
+                  Coba Lagi
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
