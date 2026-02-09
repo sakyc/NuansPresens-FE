@@ -26,17 +26,17 @@ export function ScanTab() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // Load employee data from localStorage
-  useEffect(() => {
-    const data = getEmployeeData();
-    setEmployeeData(data);
-  }, []);
+  // useEffect(() => {
+  //   const data = getEmployeeData();
+  //   setEmployeeData(data);
+  // }, []);
 
   const submitPresensi = async (token: string) => {
-    if (!employeeData) {
-      setSubmissionStatus("error");
-      setSubmissionMessage("Data karyawan tidak ditemukan. Silakan login kembali.");
-      return;
-    }
+    // if (!employeeData) {
+    //   setSubmissionStatus("error");
+    //   setSubmissionMessage("Data karyawan tidak ditemukan. Silakan login kembali.");
+    //   return;
+    // }
 
     setSubmissionStatus("loading");
     try {
@@ -46,10 +46,10 @@ export function ScanTab() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id_karyawan: employeeData.id_karyawan,
-          karyawan_shift: employeeData.karyawan_shift,
-          curent_shift: employeeData.karyawan_shift, // ID shift saat ini
-          token: token,
+          id_karyawan: 1,
+          karyawan_shift: 1,
+          curent_shift: 1, // ID shift saat ini
+          token: "701d2e3960a3772ab3794265",
         }),
       });
 
