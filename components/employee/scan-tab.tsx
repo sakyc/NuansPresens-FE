@@ -40,7 +40,7 @@ export function ScanTab() {
 
     setSubmissionStatus("loading");
     try {
-      const response = await fetch("http://localhost:2000/api/presensi", {
+      const response = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/presensi", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
