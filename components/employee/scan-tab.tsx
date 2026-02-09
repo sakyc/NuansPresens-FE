@@ -49,7 +49,7 @@ export function ScanTab() {
           id_karyawan: 1,
           karyawan_shift: 1,
           curent_shift: 1, // ID shift saat ini
-          token: scannedData,
+          token: token,
         }),
       });
 
