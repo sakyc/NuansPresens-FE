@@ -16,6 +16,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from "next-auth/react";
 
 const recentActivity = [
   { id: 1, type: "masuk", date: "Hari ini", time: "08:02", status: "success" },
@@ -81,6 +82,9 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
     }
   };
 
+  const {data: session} = useSession();
+  console.log(session);
+
   return (
     <div className="flex flex-col gap-5 pb-24">
       {/* Profile Header */}
@@ -94,7 +98,7 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-foreground">Budi Andrianto</h2>
+              <h2 className="text-lg font-semibold text-foreground">{session?.user?.name}</h2>
               <p className="text-sm text-muted-foreground">Software Engineer</p>
               <div className="mt-1 flex items-center gap-2">
                 <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
