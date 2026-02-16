@@ -22,6 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Signika } from "next/font/google";
+import { signIn } from "next-auth/react";
 
 const menuItems = [
   { icon: Bell, label: "Notifikasi", badge: "3" },
@@ -182,7 +184,7 @@ export function ProfileTab() {
       <Button
         variant="outline"
         className="w-full rounded-xl border-destructive/30 bg-destructive/10 py-6 text-destructive hover:bg-destructive/20 hover:text-destructive"
-        onClick={handleLogout}
+        onClick={() => signIn()}
         disabled={isLoggingOut}
       >
         <LogOut className="mr-2 h-5 w-5" />

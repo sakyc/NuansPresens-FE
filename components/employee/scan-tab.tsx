@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Camera, LogIn, LogOut, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getEmployeeData } from "@/lib/employee-storage";
 
 type ScanMode = "checkin" | "checkout";
 type SubmissionStatus = "idle" | "loading" | "success" | "error";
@@ -22,7 +21,6 @@ export function ScanTab() {
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("idle");
   const [submissionMessage, setSubmissionMessage] = useState<string>("");
-  const [employeeData, setEmployeeData] = useState<ReturnType<typeof getEmployeeData>>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // Load employee data from localStorage
