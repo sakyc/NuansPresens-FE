@@ -15,40 +15,67 @@ const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials){
-        const { username, password } = credentials as {
-          username: string;
-          password: string;
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error("Username dan password diperlukan");
         }
-        if (username === "admin" && password === "sua") {
+
+        try {
+          const res = await fetch("http://localhost:2000/api/auth-employe", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({
+              username: credentials.username,
+              password: credentials.password
+            })
+          })
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.massage || "Login gagal");
+          }
+
+          // Data dari Express API
+          const userData = data.data;
+
+          // Return user data yang akan disimpan di token
           return {
-            id: "1",
-            name: "Admin User",
-            email: "admin@example.com",
-            role: "admin"
+            id: userData.id.toString(),
+            username: userData.username,
+            role: userData.role,
+            karyawan: userData.karyawan // Simpan seluruh data karyawan
           };
+        } catch (error: any) {
+          console.error("Authorize error:", error);
+          throw new Error(error.message || "Terjadi kesalahan saat login");
         }
-        return null;
+        
       }
     })
   ],
   callbacks: {
-    async jwt({token, user, account, profile}: any){
-      if (user){
+    async jwt({ token, user }) {
+      if (user) {
         token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.role = user.role
+        token.username = user.username;
+        token.role = user.role;
+        token.karyawan = user.karyawan;
       }
       return token;
     },
 
-    async session({session, token}: any){
-      session.user.id = token.id;
-      session.user.name = token.name;
-      session.user.email = token.email;
-      session.user.role = token.role;
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.username = token.username as string;
+        session.user.role = token.role as string;
+        session.user.karyawan = token.karyawan as any;
+      }
       return session;
     }
+  },
+  pages: {
+    signIn: '/login',
+    signOut: '/login'
   }
 }
 

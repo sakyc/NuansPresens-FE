@@ -83,7 +83,6 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
   };
 
   const {data: session} = useSession();
-  console.log(session);
 
   return (
     <div className="flex flex-col gap-5 pb-24">
@@ -98,7 +97,7 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-foreground">{session?.user?.name}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{session?.user.karyawan?.nama}</h2>
               <p className="text-sm text-muted-foreground">Software Engineer</p>
               <div className="mt-1 flex items-center gap-2">
                 <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />

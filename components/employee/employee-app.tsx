@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BottomNavigation, type TabType } from "./bottom-navigation";
 import { HomeTab } from "./home-tab";
 import { ScanTab } from "./scan-tab";
@@ -8,10 +8,22 @@ import { RequestTab } from "./request-tab";
 import { ProfileTab } from "./profile-tab";
 import { ActivityHistory } from "./activity-history";
 import { RequestHistory } from "./request-history";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type ViewType = "main" | "activity-history" | "request-history";
 
 export function EmployeeApp() {
+  const {push} = useRouter()
+  const {data: seession, status} = useSession()
+
+  useEffect(() => {
+    if(status === "unauthenticated" ){
+      push('/login')
+    }
+  })
+
+
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [currentView, setCurrentView] = useState<ViewType>("main");
 
