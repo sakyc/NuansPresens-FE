@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Signika } from "next/font/google";
-import { signIn } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 const menuItems = [
   { icon: Bell, label: "Notifikasi", badge: "3" },
@@ -32,9 +32,11 @@ const menuItems = [
   { icon: HelpCircle, label: "Bantuan" },
 ];
 
+
 export function ProfileTab() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
+  
+  const {data: session} = useSession();
   const handleLogout = () => {
     setIsLoggingOut(true);
     setTimeout(() => {
@@ -53,8 +55,8 @@ export function ProfileTab() {
               BA
             </AvatarFallback>
           </Avatar>
-          <h2 className="mt-4 text-xl font-bold text-foreground">Budi Andrianto</h2>
-          <p className="text-sm text-muted-foreground">budi.andrianto@company.com</p>
+          <h2 className="mt-4 text-xl font-bold text-foreground">{session?.user?.karyawan?.nama}</h2>
+          <p className="text-sm text-muted-foreground">{session?.user?.karyawan?.email}</p>
           <Badge variant="outline" className="mt-3 border-success/30 bg-success/10 text-success">
             Karyawan Aktif
           </Badge>
@@ -184,7 +186,7 @@ export function ProfileTab() {
       <Button
         variant="outline"
         className="w-full rounded-xl border-destructive/30 bg-destructive/10 py-6 text-destructive hover:bg-destructive/20 hover:text-destructive"
-        onClick={() => signIn()}
+        onClick={() => signOut()}
         disabled={isLoggingOut}
       >
         <LogOut className="mr-2 h-5 w-5" />
