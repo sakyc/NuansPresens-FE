@@ -23,11 +23,7 @@ export function ScanTab() {
   const [submissionMessage, setSubmissionMessage] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  // Load employee data from localStorage
-  // useEffect(() => {
-  //   const data = getEmployeeData();
-  //   setEmployeeData(data);
-  // }, []);
+  
 
   const submitPresensi = async (token: string) => {
     // if (!employeeData) {

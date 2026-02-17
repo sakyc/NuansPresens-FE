@@ -5,12 +5,15 @@ declare module "next-auth" {
   interface User {
     role?: string;
     username?: string;
-    email?: string | null;
     karyawan?: {
       id: number;
+      email?: string | null;
       nama: string;
       nip?: string;
-      jabatan?: string;
+      jabatan?: {
+          id: number;
+          nama_jabatan: string;
+        }
     };
   }
 
@@ -19,14 +22,28 @@ declare module "next-auth" {
       id: string;
       username?: string;
       name?: string | null;
-      email?: string | null;
       role?: string;
       karyawan?: {
         id: number;
         nama: string;
         nip?: string;
-        jabatan?: string;
         email?: string | null;
+        no_hp?: string;
+        alamat?: string;
+        jabatan?: {
+          id: number;
+          nama_jabatan: string;
+        }
+        divisi?: {
+          id: number;
+          nama_divisi: string;
+        }
+        shift?: {
+        id: number;
+        nama_shift: string;
+        jam_mulai: string;
+        jam_selesai: string;
+      }
       };
     }
   }
@@ -37,13 +54,21 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: string;
     username?: string;
-    email?: string | null;
     karyawan?: {
       id: number;
       nama: string;
       nip?: string;
-      jabatan?: string;
       email?: string | null;
+      jabatan?: {
+          id: number;
+          nama_jabatan: string;
+      }
+      shift?: {
+        id: number;
+        nama_shift: string;
+        waktu_mulai: string;
+        waktu_selesai: string;
+      }
     };
   }
 }

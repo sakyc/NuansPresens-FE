@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import {parsePhoneNumberFromString} from "libphonenumber-js"
 import { 
   User, 
   Mail, 
@@ -37,12 +38,23 @@ export function ProfileTab() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const {data: session} = useSession();
+
   const handleLogout = () => {
     setIsLoggingOut(true);
+    signOut()
     setTimeout(() => {
       window.location.href = "/login";
     }, 1500);
   };
+
+  function formatPhone(phone: any) {
+  const phoneNumber = parsePhoneNumberFromString("+" + phone)
+  return phoneNumber?.formatInternational()
+  }
+
+  let nama_shift = session?.user?.karyawan?.shift?.nama_shift
+  let jam_mulai = session?.user?.karyawan?.shift?.jam_mulai.slice(0, 5)
+  let jam_selesai = session?.user?.karyawan?.shift?.jam_selesai.slice(0, 5)
 
   return (
     <div className="flex flex-col gap-5 pb-24">
@@ -76,7 +88,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Nama Lengkap</p>
-                <p className="text-sm font-medium text-foreground">Budi Andrianto</p>
+                <p className="text-sm font-medium text-foreground">{session?.user?.karyawan?.nama}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -85,7 +97,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Jabatan</p>
-                <p className="text-sm font-medium text-foreground">Software Engineer</p>
+                <p className="text-sm font-medium text-foreground">{session?.user?.karyawan?.jabatan?.nama_jabatan  }</p>
               </div>
             </div>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -94,7 +106,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Departemen</p>
-                <p className="text-sm font-medium text-foreground">IT Department</p>
+                <p className="text-sm font-medium text-foreground">{session?.user?.karyawan?.divisi?.nama_divisi}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -103,7 +115,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Email</p>
-                <p className="text-sm font-medium text-foreground">budi.andrianto@company.com</p>
+                <p className="text-sm font-medium text-foreground">{session?.user.karyawan?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -112,7 +124,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">No. Telepon</p>
-                <p className="text-sm font-medium text-foreground">+62 812-3456-7890</p>
+                <p className="text-sm font-medium text-foreground">{formatPhone(session?.user?.karyawan?.no_hp)}</p>
               </div>
             </div>
             <div className="flex items-center gap-4 px-5 py-4">
@@ -121,7 +133,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Alamat</p>
-                <p className="text-sm font-medium text-foreground">Jakarta Selatan, DKI Jakarta</p>
+                <p className="text-sm font-medium text-foreground">{session?.user?.karyawan?.alamat}</p>
               </div>
             </div>
           </div>
@@ -141,7 +153,7 @@ export function ProfileTab() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">Shift</p>
-                <p className="text-sm font-medium text-foreground">Reguler (08:00 - 17:00)</p>
+                <p className="text-sm font-medium text-foreground">{nama_shift} ( {jam_mulai} - {jam_selesai} )</p>
               </div>
               <Badge className="bg-success/20 text-success">Aktif</Badge>
             </div>
@@ -186,7 +198,7 @@ export function ProfileTab() {
       <Button
         variant="outline"
         className="w-full rounded-xl border-destructive/30 bg-destructive/10 py-6 text-destructive hover:bg-destructive/20 hover:text-destructive"
-        onClick={() => signOut()}
+        onClick={() => handleLogout()}
         disabled={isLoggingOut}
       >
         <LogOut className="mr-2 h-5 w-5" />
