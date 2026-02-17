@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Camera, LogIn, LogOut, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 type ScanMode = "checkin" | "checkout";
 type SubmissionStatus = "idle" | "loading" | "success" | "error";
@@ -23,7 +24,8 @@ export function ScanTab() {
   const [submissionMessage, setSubmissionMessage] = useState<string>("");
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  
+  const session = useSession()
+  let type = scanMode === "checkin" ? "masuk" : "keluar";
 
   const submitPresensi = async (token: string) => {
     // if (!employeeData) {
@@ -40,9 +42,8 @@ export function ScanTab() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id_karyawan: 1,
-          karyawan_shift: 1,
-          curent_shift: 1, // ID shift saat ini
+          id_karyawan: session.data?.user?.karyawan?.id,
+          type: type,
           token: token,
         }),
       });
