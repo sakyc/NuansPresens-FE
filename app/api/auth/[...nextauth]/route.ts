@@ -20,7 +20,7 @@ const authOptions: NextAuthOptions = {
         }
 
         try {
-          const res = await fetch("http://localhost:2000/api/auth-employe", {
+          const res = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/auth-employe", {
             method: 'POST',
             headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
