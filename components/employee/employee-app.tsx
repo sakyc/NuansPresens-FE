@@ -59,7 +59,7 @@ export function EmployeeApp() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-md px-4 py-5">
+        <div className="mx-auto max-w-md px-2">
           {currentView === "activity-history" && (
             <ActivityHistory onBack={() => setCurrentView("main")} />
           )}

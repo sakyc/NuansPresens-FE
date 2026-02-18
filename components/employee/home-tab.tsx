@@ -124,7 +124,15 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
                 <p className="text-sm font-medium text-foreground">{formatDate(currentTime)}</p>
               </div>
             </div>
-            
+            {/* <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Waktu</p>
+                <p className="font-mono text-lg font-bold text-success">{formatTime(currentTime)}</p>
+              </div>
+              <div className="rounded-xl bg-success/15 p-3">
+                <Clock className="h-5 w-5 text-success" />
+              </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
