@@ -22,19 +22,16 @@ export function ScanTab() {
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("idle");
   const [submissionMessage, setSubmissionMessage] = useState<string>("");
+  const [showModal, setShowModal] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const session = useSession()
-  let type = scanMode === "checkin" ? "masuk" : "keluar";
+  const session = useSession();
+  const type = scanMode === "checkin" ? "masuk" : "keluar";
 
   const submitPresensi = async (token: string) => {
-    // if (!employeeData) {
-    //   setSubmissionStatus("error");
-    //   setSubmissionMessage("Data karyawan tidak ditemukan. Silakan login kembali.");
-    //   return;
-    // }
-
     setSubmissionStatus("loading");
+    setShowModal(true);
+    
     try {
       const response = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/presensi", {
         method: "POST",
@@ -50,11 +47,13 @@ export function ScanTab() {
 
       const data: SubmissionResponse = await response.json();
 
-      if (response.ok && data.status === "success") {
+      if (response.ok && response.status === 200) {
         setSubmissionStatus("success");
         setSubmissionMessage(data.message || "Presensi berhasil dicatat!");
-        // Reset after 3 seconds
+        
+        // Auto close modal after 3 seconds
         setTimeout(() => {
+          setShowModal(false);
           setScannedData(null);
           setSubmissionStatus("idle");
           setSubmissionMessage("");
@@ -76,7 +75,6 @@ export function ScanTab() {
     setSubmissionMessage("");
     setIsScanning(true);
 
-    // Wait for DOM to render the container
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     try {
@@ -90,18 +88,14 @@ export function ScanTab() {
           qrbox: { width: 250, height: 250 },
         },
         (decodedText) => {
-          // QR scanned - show result and prepare submission
           setScannedData(decodedText);
           scanner.stop().catch(() => {});
           setIsScanning(false);
-          // Automatically submit after a brief delay
           setTimeout(() => {
             submitPresensi(decodedText);
           }, 500);
         },
-        () => {
-          // Ignore scan errors (no QR in frame)
-        }
+        () => {}
       );
     } catch (err) {
       console.log("[v0] Scanner error:", err);
@@ -121,14 +115,24 @@ export function ScanTab() {
     setIsScanning(false);
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (scannerRef.current) {
+  const closeModal = () => {
+    setShowModal(false);
+    setScannedData(null);
+    setSubmissionStatus("idle");
+    setSubmissionMessage("");
+  };
+
+ // Cleanup on unmount
+useEffect(() => {
+  return () => {
+    if (scannerRef.current) {
+      // Cek dulu apakah masih scanning sebelum stop
+      if (scannerRef.current.getState() === 2) { // 2 = sedang scanning
         scannerRef.current.stop().catch(() => {});
       }
-    };
-  }, []);
+    }
+  };
+}, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -166,13 +170,10 @@ export function ScanTab() {
       <div className="relative aspect-square overflow-hidden rounded-3xl bg-black">
         {isScanning ? (
           <>
-            {/* Camera view */}
             <div
               id="qr-reader"
               className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
             />
-
-            {/* Viewfinder overlay */}
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="relative h-64 w-64">
                 <div className={cn("absolute top-0 left-0 h-12 w-12 border-t-4 border-l-4 rounded-tl-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
@@ -181,8 +182,6 @@ export function ScanTab() {
                 <div className={cn("absolute bottom-0 right-0 h-12 w-12 border-b-4 border-r-4 rounded-br-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
               </div>
             </div>
-
-            {/* Stop button */}
             <button
               type="button"
               onClick={stopScanner}
@@ -214,67 +213,108 @@ export function ScanTab() {
               <Camera className="h-5 w-5" />
               Buka Kamera
             </button>
+            
+            {/* Manual Token Input */}
+            <div className="w-full mt-4 pt-4 border-t border-white/10">
+              <p className="text-sm font-medium text-white/80 mb-3">Atau masukkan token manual:</p>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const token = formData.get("token") as string;
+                  if (token?.trim()) {
+                    submitPresensi(token);
+                    e.currentTarget.reset();
+                  }
+                }} 
+                className="flex gap-2"
+              >
+                <input
+                  type="text"
+                  name="token"
+                  placeholder="Masukkan token..."
+                  className="flex-1 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                />
+                <button
+                  type="submit"
+                  disabled={submissionStatus === "loading"}
+                  className={cn(
+                    "rounded-xl px-6 py-3 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed",
+                    scanMode === "checkin"
+                      ? "bg-success text-success-foreground hover:bg-success/90"
+                      : "bg-warning text-warning-foreground hover:bg-warning/90"
+                  )}
+                >
+                  {submissionStatus === "loading" ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Scanned Result & Submission Status */}
+      {/* Scanned QR Data */}
       {scannedData && (
-        <div className="space-y-3">
-          {/* Scanned QR Data */}
-          <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
-            <p className="text-xs text-muted-foreground mb-2">QR Code:</p>
-            <p className="text-sm font-mono text-foreground break-all">{scannedData}</p>
-          </div>
+        <div className="rounded-2xl border border-success/30 bg-success/10 p-4">
+          <p className="text-xs text-muted-foreground mb-2">QR Code terdeteksi:</p>
+          <p className="text-sm font-mono text-foreground break-all">{scannedData}</p>
+        </div>
+      )}
 
-          {/* Loading State */}
-          {submissionStatus === "loading" && (
-            <div className="rounded-2xl border border-accent/30 bg-accent/10 p-6 flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 text-accent animate-spin" />
-              <div className="text-center">
-                <p className="text-sm font-medium text-foreground">Memproses Presensi...</p>
-                <p className="text-xs text-muted-foreground mt-1">Harap tunggu sebentar</p>
+      {/* Modal Status */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-2xl">
+            {submissionStatus === "loading" && (
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-accent/20 p-4">
+                  <Loader2 className="h-12 w-12 text-accent animate-spin" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-foreground">Memproses Presensi</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Harap tunggu sebentar...</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Success State */}
-          {submissionStatus === "success" && (
-            <div className="rounded-2xl border border-success/50 bg-success/20 p-6 flex flex-col items-center gap-3">
-              <div className="rounded-full bg-success/30 p-3">
-                <Check className="h-8 w-8 text-success" />
+            {submissionStatus === "success" && (
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-success/20 p-4">
+                  <Check className="h-12 w-12 text-success" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-success">Berhasil!</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{submissionMessage}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {scanMode === "checkin" ? "Selamat datang!" : "Sampai jumpa besok!"}
+                  </p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-success">{submissionMessage}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {scanMode === "checkin" ? "Selamat datang!" : "Sampai jumpa besok!"}
-                </p>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Error State */}
-          {submissionStatus === "error" && (
-            <div className="rounded-2xl border border-destructive/50 bg-destructive/20 p-6 flex flex-col items-center gap-3">
-              <div className="rounded-full bg-destructive/30 p-3">
-                <AlertCircle className="h-8 w-8 text-destructive" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-destructive">{submissionMessage}</p>
+            {submissionStatus === "error" && (
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-destructive/20 p-4">
+                  <AlertCircle className="h-12 w-12 text-destructive" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-destructive">Gagal!</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{submissionMessage}</p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setScannedData(null);
-                    setSubmissionStatus("idle");
-                    setSubmissionMessage("");
-                  }}
-                  className="mt-3 rounded-lg bg-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/40 transition-colors"
+                  onClick={closeModal}
+                  className="mt-2 w-full rounded-xl bg-destructive/20 px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/30 transition-colors"
                 >
-                  Coba Lagi
+                  Tutup
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
