@@ -1,37 +1,41 @@
 "use client";
 
-import React from "react"
+import React, { useEffect, useState, useRef } from "react";
 
-import { useState } from "react";
-import { 
-  Thermometer, 
-  FileText, 
-  Calendar as CalendarIcon, 
+import {
+  Thermometer,
+  FileText,
+  Calendar as CalendarIcon,
   Send,
   CheckCircle2,
   Loader2,
   ChevronRight,
   Clock,
   ImagePlus,
-  X
+  X,
 } from "lucide-react";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
-type RequestType = "sakit" | "izin";
+type RequestType = "sakit" | "cuti" | "izin";
 
 const requestHistory = [
   { id: 1, type: "sakit", date: "10 Jan 2025", status: "approved", reason: "Demam dan flu" },
-  { id: 2, type: "izin", date: "5 Jan 2025", status: "approved", reason: "Acara keluarga" },
-  { id: 3, type: "izin", date: "28 Dec 2024", status: "rejected", reason: "Keperluan pribadi" },
+  { id: 2, type: "cuti", date: "5 Jan 2025", status: "approved", reason: "Acara keluarga" },
+  { id: 3, type: "cuti", date: "28 Dec 2024", status: "rejected", reason: "Keperluan pribadi" },
 ];
 
 interface RequestTabProps {
@@ -40,6 +44,9 @@ interface RequestTabProps {
 
 export function RequestTab({ onViewAllHistory }: RequestTabProps) {
   const [requestType, setRequestType] = useState<RequestType>("sakit");
+  const [tabIndex, setTabIndex] = useState(0);
+const scrollRef = useRef<HTMLDivElement>(null);
+const [activeSlide, setActiveSlide] = useState(0);
   const [date, setDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [reason, setReason] = useState("");
@@ -64,7 +71,7 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
 
   const handleSubmit = () => {
     if (!date || !reason.trim()) return;
-    
+
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -99,16 +106,37 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
         <div className="text-center">
           <h3 className="text-xl font-bold text-foreground">Pengajuan Terkirim!</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Pengajuan {requestType === "sakit" ? "sakit" : "izin"} Anda sedang diproses
+            Pengajuan {requestType} Anda sedang diproses
           </p>
         </div>
       </div>
     );
   }
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const slideWidth = el.offsetWidth;
+      const index = Math.round(el.scrollLeft / slideWidth);
+      setActiveSlide(index);
+    };
+
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="flex flex-col gap-5 pb-24">
-      {/* Request Type Toggle */}
+
+<div className="space-y-3">
+  <div
+    ref={scrollRef}
+    className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide"
+  >
+    {/* Slide 1 */}
+    <div className="min-w-full snap-center">
       <div className="flex items-center gap-2 rounded-2xl bg-card p-1.5">
         <button
           type="button"
@@ -123,6 +151,7 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
           <Thermometer className="h-4 w-4" />
           Sakit
         </button>
+
         <button
           type="button"
           onClick={() => setRequestType("izin")}
@@ -137,6 +166,41 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
           Izin
         </button>
       </div>
+    </div>
+
+    {/* Slide 2 */}
+    <div className="min-w-full snap-center">
+      <div className="flex items-center gap-2 rounded-2xl bg-card p-1.5">
+        <button
+          type="button"
+          onClick={() => setRequestType("cuti")}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all",
+            requestType === "cuti"
+              ? "bg-success text-white shadow-lg shadow-success/25"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <FileText className="h-4 w-4" />
+          Cuti
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {/* 🔥 DOT INDICATOR */}
+  <div className="flex justify-center gap-2">
+    {[0, 1].map((i) => (
+      <div
+        key={i}
+        className={cn(
+          "h-2 w-2 rounded-full bg-white/40 transition-all duration-300",
+          activeSlide === i && "w-4 bg-white"
+        )}
+      />
+    ))}
+  </div>
+</div>
 
       {/* Request Form */}
       <Card className="border-border/50">
@@ -203,7 +267,7 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
           {/* Reason */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">
-              Alasan {requestType === "sakit" ? "Sakit" : "Izin"}
+              Alasan {requestType === "sakit" ? "Sakit" : "Cuti"}
             </Label>
             <Textarea
               placeholder={

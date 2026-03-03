@@ -28,6 +28,14 @@ export function ScanTab() {
   const session = useSession();
   const type = scanMode === "checkin" ? "masuk" : "keluar";
 
+  // useEffect(() => {
+  //   try {
+  //     const res = 
+  //   } catch (error) {
+      
+  //   }
+  // }, []);
+
   const submitPresensi = async (token: string) => {
     setSubmissionStatus("loading");
     setShowModal(true);
@@ -172,7 +180,7 @@ useEffect(() => {
           <>
             <div
               id="qr-reader"
-              className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+              className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover [&_video]:scale-x-[-1]"
             />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="relative h-64 w-64">
