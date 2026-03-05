@@ -27,6 +27,7 @@ export function ScanTab() {
 
   const session = useSession();
   const type = scanMode === "checkin" ? "masuk" : "keluar";
+  const isCheckoutAllowed = true; 
 
   // useEffect(() => {
   //   try {
@@ -41,35 +42,68 @@ export function ScanTab() {
     setShowModal(true);
     
     try {
-      const response = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/presensi", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_karyawan: session.data?.user?.karyawan?.id,
-          type: type,
-          token: token,
-        }),
-      });
-
-      const data: SubmissionResponse = await response.json();
-
-      if (response.ok && response.status === 200) {
-        setSubmissionStatus("success");
-        setSubmissionMessage(data.message || "Presensi berhasil dicatat!");
-        
-        // Auto close modal after 3 seconds
-        setTimeout(() => {
-          setShowModal(false);
-          setScannedData(null);
-          setSubmissionStatus("idle");
-          setSubmissionMessage("");
-        }, 3000);
-      } else {
-        setSubmissionStatus("error");
-        setSubmissionMessage(data.message || "Gagal mencatat presensi");
+      if(type === "masuk"){
+        const response = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/presensi/check-in", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_karyawan: session.data?.user?.karyawan?.id,
+            type: type,
+            token: token,
+          }),
+        });
+  
+        const data: SubmissionResponse = await response.json();
+  
+        if (response.ok && response.status === 200) {
+          setSubmissionStatus("success");
+          setSubmissionMessage(data.message || "Presensi berhasil dicatat!");
+          
+          // Auto close modal after 3 seconds
+          setTimeout(() => {
+            setShowModal(false);
+            setScannedData(null);
+            setSubmissionStatus("idle");
+            setSubmissionMessage("");
+          }, 3000);
+        } else {
+          setSubmissionStatus("error");
+          setSubmissionMessage(data.message || "Gagal mencatat presensi");
+        }
+      } 
+      else {
+        const response = await fetch("https://jeramy-silty-stasia.ngrok-free.dev/api/presensi/check-out", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id_karyawan: session.data?.user?.karyawan?.id,
+            token: token,
+          }),
+        });
+  
+        const data: SubmissionResponse = await response.json();
+  
+        if (response.ok && response.status === 200) {
+          setSubmissionStatus("success");
+          setSubmissionMessage(data.message || "Presensi berhasil dicatat!");
+          
+          // Auto close modal after 3 seconds //progres malam ini beres checkout tunuh
+          setTimeout(() => {
+            setShowModal(false);
+            setScannedData(null);
+            setSubmissionStatus("idle");
+            setSubmissionMessage("");
+          }, 3000);
+        } else {
+          setSubmissionStatus("error");
+          setSubmissionMessage(data.message || "Gagal mencatat presensi");
+        }
       }
+      
     } catch (error) {
       console.log("[v0] API error:", error);
       setSubmissionStatus("error");
@@ -176,53 +210,68 @@ useEffect(() => {
 
       {/* Scanner Area */}
       <div className="relative aspect-square overflow-hidden rounded-3xl bg-black">
-        {isScanning ? (
-          <>
-            <div
-              id="qr-reader"
-              className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover [&_video]:scale-x-[-1]"
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-64 w-64">
-                <div className={cn("absolute top-0 left-0 h-12 w-12 border-t-4 border-l-4 rounded-tl-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
-                <div className={cn("absolute top-0 right-0 h-12 w-12 border-t-4 border-r-4 rounded-tr-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
-                <div className={cn("absolute bottom-0 left-0 h-12 w-12 border-b-4 border-l-4 rounded-bl-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
-                <div className={cn("absolute bottom-0 right-0 h-12 w-12 border-b-4 border-r-4 rounded-br-2xl", scanMode === "checkin" ? "border-success" : "border-warning")} />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={stopScanner}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/60 px-6 py-3 text-white backdrop-blur-sm"
-            >
-              <X className="h-5 w-5" />
-              Tutup
-            </button>
-          </>
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
-            <div className={cn("rounded-3xl p-6", scanMode === "checkin" ? "bg-success/20" : "bg-warning/20")}>
-              <Camera className={cn("h-16 w-16", scanMode === "checkin" ? "text-success" : "text-warning")} />
-            </div>
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-white">Scan QR Code</h3>
-              <p className="mt-1 text-sm text-white/60">Tekan tombol di bawah untuk memulai</p>
-            </div>
-            <button
-              type="button"
-              onClick={startScanner}
-              className={cn(
-                "flex items-center gap-2 rounded-xl px-8 py-3 font-semibold",
-                scanMode === "checkin"
-                  ? "bg-success text-success-foreground"
-                  : "bg-warning text-warning-foreground"
-              )}
-            >
-              <Camera className="h-5 w-5" />
-              Buka Kamera
-            </button>
-            
-            {/* Manual Token Input */}
+        {!isScanning && (
+  <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
+    {scanMode === "checkout" && !isCheckoutAllowed ? (
+      <>
+        {/* Tampilan Tidak Bisa Checkout */}
+        <div className="rounded-3xl bg-muted/20 p-6">
+          <AlertCircle className="h-16 w-16 text-muted-foreground" />
+        </div>
+
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-white">
+            Belum Waktunya Check-Out
+          </h3>
+          <p className="mt-1 text-sm text-white/60">
+            Anda belum dapat melakukan presensi keluar saat ini.
+          </p>
+        </div>
+      </>
+    ) : (
+      <>
+        {/* Tampilan Normal (Checkin / Checkout yang diizinkan) */}
+        <div
+          className={cn(
+            "rounded-3xl p-6",
+            scanMode === "checkin"
+              ? "bg-success/20"
+              : "bg-warning/20"
+          )}
+        >
+          <Camera
+            className={cn(
+              "h-16 w-16",
+              scanMode === "checkin"
+                ? "text-success"
+                : "text-warning"
+            )}
+          />
+        </div>
+
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-white">
+            Scan QR Code
+          </h3>
+          <p className="mt-1 text-sm text-white/60">
+            Tekan tombol di bawah untuk memulai
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={startScanner}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-8 py-3 font-semibold",
+            scanMode === "checkin"
+              ? "bg-success text-success-foreground"
+              : "bg-warning text-warning-foreground"
+          )}
+        >
+          <Camera className="h-5 w-5" />
+          Buka Kamera
+        </button>
+        {/* Manual Token Input */}
             <div className="w-full mt-4 pt-4 border-t border-white/10">
               <p className="text-sm font-medium text-white/80 mb-3">Atau masukkan token manual:</p>
               <form 
@@ -261,8 +310,10 @@ useEffect(() => {
                 </button>
               </form>
             </div>
-          </div>
-        )}
+      </>
+    )}
+  </div>
+)}
       </div>
 
       {/* Scanned QR Data */}
