@@ -28,23 +28,34 @@ export function ScanTab() {
   const [scanMode, setScanMode] = useState<ScanMode>('checkin');
   const [isScanning, setIsScanning] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
-  const [submissionStatus, setSubmissionStatus] =
-    useState<SubmissionStatus>('idle');
+  const [submissionStatus, setSubmissionStatus] =useState<SubmissionStatus>('idle');
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const session = useSession();
   const type = scanMode === 'checkin' ? 'masuk' : 'keluar';
-  const isCheckoutAllowed = true;
+  const [isCheckout, setIsCheckout] = useState(false);
 
-  // useEffect(() => {
-  //   try {
-  //     const res =
-  //   } catch (error) {
+  useEffect (() =>  {
+      const get_checkout_status = async () => {
+        try {
+          const res = await fetch('https://jeramy-silty-stasia.ngrok-free.dev/api/qr-status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ type: "keluar" })
+          })
 
-  //   }
-  // }, []);
+          const data = await res.json();
+          setIsCheckout(data.status === 'aktif' ? true : false);
+        }
+        catch (error) {
+          console.error("Error getting checkout status:", error);
+        }
+      }
+
+      get_checkout_status();    
+  }, []);
 
   const submitPresensi = async (token: string) => {
     setSubmissionStatus('loading');
@@ -269,7 +280,7 @@ export function ScanTab() {
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
-            {scanMode === 'checkout' && !isCheckoutAllowed ? (
+            {scanMode === 'checkout' && !isCheckout ? (
               <>
                 <div className="rounded-3xl bg-muted/20 p-6">
                   <AlertCircle className="h-16 w-16 text-muted-foreground" />
