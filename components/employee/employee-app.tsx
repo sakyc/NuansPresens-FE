@@ -30,7 +30,7 @@ export function EmployeeApp() {
   const getPageTitle = () => {
     if (currentView === "activity-history") return "Riwayat Aktivitas";
     if (currentView === "request-history") return "Riwayat Pengajuan";
-    
+    // beres 
     switch (activeTab) {
       case "home":
         return "Beranda";
