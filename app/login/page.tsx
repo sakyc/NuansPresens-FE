@@ -21,34 +21,34 @@ export default function LoginPage() {
   });
 
   const {push} = useRouter()
+  
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-    try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        username: formData.employeeId,
-        password: formData.password
-      })
-      if (res){
-        push('/')
-      }
-    } catch (error) {
-      console.log(error)
-    }
-    // Simulate login validation
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Demo: accept any non-empty credentials
-    if (formData.employeeId && formData.password) {
-      setIsLoading(false);
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
+
+  try {
+    const res = await signIn("credentials", {
+      redirect: false,
+      username: formData.employeeId,
+      password: formData.password,
+    });
+
+    if (res?.error) {
+      // res.error akan berisi pesan yang kamu 'throw' di authorize atau dari API
+      // Jika res.error berisi "CredentialsSignin", itu pesan default NextAuth
+      setError(res.error === "CredentialsSignin" 
+        ? "ID Karyawan atau Password salah" 
+        : res.error);
+    } else if (res?.ok) {
       router.push("/");
-    } else {
-      setError("ID Karyawan atau Password salah");
-      setIsLoading(false);
     }
-  };
+  } catch (err) {
+    setError("Terjadi kesalahan koneksi ke server");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
