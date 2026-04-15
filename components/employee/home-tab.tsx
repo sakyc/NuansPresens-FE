@@ -41,6 +41,7 @@ interface HomeTabProps {
 
 export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [points, setPoints] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -67,6 +68,7 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
     month: 'long',
   });
   const currentYear = currentTime.getFullYear();
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -95,6 +97,34 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
   };
 
   const { data: session } = useSession();
+
+  const fetchUserPoint = async () => {
+    try {
+      const userId = session?.user?.id;
+      const res = await fetch(
+        `https://jeramy-silty-stasia.ngrok-free.dev/api/get-point?user_id=${userId}`, 
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true', 
+          },
+        }
+      );
+
+      const result = await res.json();
+
+      if (res.ok) {
+        console.log("Poin Berhasil diambil:", result.data);
+        setPoints(result.data? result.data : 0); 
+      }
+    } catch (error) {
+      console.error('Fetch point error:', error);
+    }
+  };
+  useEffect(() => {
+    fetchUserPoint();
+  }, [session?.user?.id]);
 
   return (
     <div className="flex flex-col gap-5 pb-24">
@@ -156,7 +186,7 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
                 {/* Bagian Poin */}
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold leading-none mb-1">Point Karyawan</p>
                 <div className="flex items-center justify-end gap-1 mb-1">
-                  <span className="text-sm font-extrabold text-amber-500">1.250</span>
+                  <span className="text-sm font-extrabold text-amber-500">{points}</span>
                   <span className="text-[10px] font-medium text-amber-500/80">PTS</span>
                 </div>
                 
