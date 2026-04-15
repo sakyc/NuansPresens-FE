@@ -8,10 +8,11 @@ import { RequestTab } from "./request-tab";
 import { ProfileTab } from "./profile-tab";
 import { ActivityHistory } from "./activity-history";
 import { RequestHistory } from "./request-history";
+import { PointsWallet } from "./points-wallet";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-type ViewType = "main" | "activity-history" | "request-history";
+type ViewType = "main" | "activity-history" | "request-history" | "points-wallet";
 
 export function EmployeeApp() {
   const {push} = useRouter()
@@ -30,6 +31,7 @@ export function EmployeeApp() {
   const getPageTitle = () => {
     if (currentView === "activity-history") return "Riwayat Aktivitas";
     if (currentView === "request-history") return "Riwayat Pengajuan";
+    if (currentView === "points-wallet") return "Dompet Poin & Integritas";
     // beres 
     switch (activeTab) {
       case "home":
@@ -66,10 +68,16 @@ export function EmployeeApp() {
           {currentView === "request-history" && (
             <RequestHistory onBack={() => setCurrentView("main")} />
           )}
+          {currentView === "points-wallet" && (
+            <PointsWallet onBack={() => setCurrentView("main")} />
+          )}
           {currentView === "main" && (
             <>
               {activeTab === "home" && (
-                <HomeTab onViewAllActivity={() => setCurrentView("activity-history")} />
+                <HomeTab 
+                  onViewAllActivity={() => setCurrentView("activity-history")}
+                  onViewPointsWallet={() => setCurrentView("points-wallet")}
+                />
               )}
               {activeTab === "scan" && <ScanTab />}
               {activeTab === "request" && (
