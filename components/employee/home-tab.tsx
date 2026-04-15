@@ -36,9 +36,10 @@ const recentActivity = [
 
 interface HomeTabProps {
   onViewAllActivity?: () => void;
+  onViewPointsWallet?: () => void;
 }
 
-export function HomeTab({ onViewAllActivity }: HomeTabProps) {
+export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -149,7 +150,7 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
             {/* Sisi Kanan: Poin & Rank (Clickable) */}
             <div 
               className="flex items-center gap-3 pl-4 border-l border-border/50 cursor-pointer group active:scale-95 transition-all"
-              onClick={() => alert("Menuju Detail Poin & Ranking...")}
+              onClick={onViewPointsWallet}
             >
               <div className="text-right">
                 {/* Bagian Poin */}
