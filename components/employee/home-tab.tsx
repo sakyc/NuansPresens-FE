@@ -1,29 +1,37 @@
-"use client";
+'use client';
 
-import React from "react"
+import React from 'react';
 
-import { useEffect, useState } from "react";
-import { 
-  Calendar, 
-  Clock, 
-  TrendingUp, 
-  CheckCircle2, 
-  XCircle, 
+import { useEffect, useState } from 'react';
+import {
+  Calendar,
+  Clock,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   ChevronRight,
-  Briefcase
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useSession } from "next-auth/react";
+  Briefcase,
+  Info,
+  Coins
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { useSession } from 'next-auth/react';
 
 const recentActivity = [
-  { id: 1, type: "masuk", date: "Hari ini", time: "08:02", status: "success" },
-  { id: 2, type: "keluar", date: "Kemarin", time: "17:05", status: "success" },
-  { id: 3, type: "masuk", date: "Kemarin", time: "08:15", status: "late" },
-  { id: 4, type: "izin", date: "3 hari lalu", time: "-", status: "approved" },
-  { id: 5, type: "masuk", date: "4 hari lalu", time: "07:58", status: "success" },
+  { id: 1, type: 'masuk', date: 'Hari ini', time: '08:02', status: 'success' },
+  { id: 2, type: 'keluar', date: 'Kemarin', time: '17:05', status: 'success' },
+  { id: 3, type: 'masuk', date: 'Kemarin', time: '08:15', status: 'late' },
+  { id: 4, type: 'izin', date: '3 hari lalu', time: '-', status: 'approved' },
+  {
+    id: 5,
+    type: 'masuk',
+    date: '4 hari lalu',
+    time: '07:58',
+    status: 'success',
+  },
 ];
 
 interface HomeTabProps {
@@ -32,37 +40,40 @@ interface HomeTabProps {
 
 export function HomeTab({ onViewAllActivity }: HomeTabProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+    return date.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
       hour12: false,
     });
   };
-
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+    return date.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
     });
   };
+  const currentMonth = currentTime.toLocaleDateString('id-ID', {
+    month: 'long',
+  });
+  const currentYear = currentTime.getFullYear();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "success":
+      case 'success':
         return <CheckCircle2 className="h-4 w-4 text-success" />;
-      case "late":
+      case 'late':
         return <AlertCircle className="h-4 w-4 text-warning" />;
-      case "approved":
+      case 'approved':
         return <CheckCircle2 className="h-4 w-4 text-blue-400" />;
       default:
         return <XCircle className="h-4 w-4 text-destructive" />;
@@ -71,18 +82,18 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case "masuk":
-        return { label: "Masuk", color: "bg-success/20 text-success" };
-      case "keluar":
-        return { label: "Keluar", color: "bg-orange-500/20 text-orange-400" };
-      case "izin":
-        return { label: "Izin", color: "bg-blue-500/20 text-blue-400" };
+      case 'masuk':
+        return { label: 'Masuk', color: 'bg-success/20 text-success' };
+      case 'keluar':
+        return { label: 'Keluar', color: 'bg-orange-500/20 text-orange-400' };
+      case 'izin':
+        return { label: 'Izin', color: 'bg-blue-500/20 text-blue-400' };
       default:
-        return { label: type, color: "bg-muted text-muted-foreground" };
+        return { label: type, color: 'bg-muted text-muted-foreground' };
     }
   };
 
-  const {data: session} = useSession();
+  const { data: session } = useSession();
 
   return (
     <div className="flex flex-col gap-5 pb-24">
@@ -97,14 +108,21 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-foreground">{session?.user.karyawan?.nama}</h2>
+              <h2 className="text-lg font-semibold text-foreground">
+                {session?.user.karyawan?.nama}
+              </h2>
               <p className="text-sm text-muted-foreground">Software Engineer</p>
               <div className="mt-1 flex items-center gap-2">
                 <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">IT Department</span>
+                <span className="text-xs text-muted-foreground">
+                  IT Department
+                </span>
               </div>
             </div>
-            <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
+            <Badge
+              variant="outline"
+              className="border-success/30 bg-success/10 text-success"
+            >
               Aktif
             </Badge>
           </div>
@@ -112,68 +130,140 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
       </Card>
 
       {/* Date & Time Card */}
-      <Card className="border-border/50">
+      <Card className="border-border/50 overflow-hidden">
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
+            {/* Sisi Kiri: Tanggal */}
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-accent p-3">
                 <Calendar className="h-5 w-5 text-foreground" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Tanggal</p>
-                <p className="text-sm font-medium text-foreground">{formatDate(currentTime)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Tanggal</p>
+                <p className="text-sm font-bold text-foreground">
+                  {formatDate(currentTime)}
+                </p>
               </div>
             </div>
-            {/* <div className="flex items-center gap-3">
+
+            {/* Sisi Kanan: Poin & Rank (Clickable) */}
+            <div 
+              className="flex items-center gap-3 pl-4 border-l border-border/50 cursor-pointer group active:scale-95 transition-all"
+              onClick={() => alert("Menuju Detail Poin & Ranking...")}
+            >
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Waktu</p>
-                <p className="font-mono text-lg font-bold text-success">{formatTime(currentTime)}</p>
+                {/* Bagian Poin */}
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold leading-none mb-1">Point Karyawan</p>
+                <div className="flex items-center justify-end gap-1 mb-1">
+                  <span className="text-sm font-extrabold text-amber-500">1.250</span>
+                  <span className="text-[10px] font-medium text-amber-500/80">PTS</span>
+                </div>
+                
+                {/* Bagian Rank (Baru) */}
+                <div className="flex items-center justify-end gap-1.5">
+                  <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-800 text-[9px] px-1.5 py-0 h-4 flex gap-1 items-center">
+                    <TrendingUp className="h-2.5 w-2.5 text-success" />
+                    RANK #4
+                  </Badge>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
-              <div className="rounded-xl bg-success/15 p-3">
-                <Clock className="h-5 w-5 text-success" />
+
+              {/* Icon Container */}
+              <div className="relative">
+                <div className="rounded-xl bg-amber-500/15 p-3 group-hover:bg-amber-500/25 transition-colors">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-amber-500"
+                  >
+                    <circle cx="8" cy="8" r="6" />
+                    <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+                    <path d="M7 6h1v4" />
+                    <path d="m16.71 13.88.7.71-2.82 2.82" />
+                  </svg>
+                </div>
+                {/* Glow Effect di belakang icon agar lebih mewah */}
+                <div className="absolute inset-0 bg-amber-500/10 blur-xl rounded-full -z-10 overflow-visible"></div>
               </div>
-            </div> */}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="border-border/50">
-          <CardContent className="p-4 text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-success/15">
-              <TrendingUp className="h-5 w-5 text-success" />
-            </div>
-            <p className="text-xl font-bold text-foreground">22</p>
-            <p className="text-[10px] text-muted-foreground">Hadir</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4 text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-warning/15">
-              <AlertCircle className="h-5 w-5 text-warning" />
-            </div>
-            <p className="text-xl font-bold text-foreground">2</p>
-            <p className="text-[10px] text-muted-foreground">Terlambat</p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4 text-center">
-            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/15">
-              <FileText className="h-5 w-5 text-blue-400" />
-            </div>
-            <p className="text-xl font-bold text-foreground">1</p>
-            <p className="text-[10px] text-muted-foreground">Izin</p>
-          </CardContent>
-        </Card>
-      </div>
+      <section>
+        <div className="mb-3 flex items-end justify-between px-1">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Ringkasan Laporan
+            </h3>
+            <p className="text-[11px] text-muted-foreground">
+              Periode: {currentMonth} {currentYear}
+            </p>
+          </div>
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-normal py-0 px-2 h-5"
+          >
+            <Info className="mr-1 h-3 w-3" /> Bulan Ini
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-success/15 shadow-inner">
+                <TrendingUp className="h-5 w-5 text-success" />
+              </div>
+              <p className="text-xl font-bold text-foreground">22</p>
+              <p className="text-[10px]  tracking-wider font-medium text-muted-foreground">
+                Hadir
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-warning/15 shadow-inner">
+                <AlertCircle className="h-5 w-5 text-warning" />
+              </div>
+              <p className="text-xl font-bold text-foreground">2</p>
+              <p className="text-[10px]  tracking-wider font-medium text-muted-foreground">
+                Terlambat
+              </p>
+            </CardContent>
+          </Card>
+              
+          <Card className="border-border/50 bg-card/50">
+            <CardContent className="p-4 text-center">
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/15 shadow-inner">
+                <FileText className="h-5 w-5 text-blue-400" />
+              </div>
+              <p className="text-xl font-bold text-foreground">1</p>
+              <p className="text-[10px]  tracking-wider font-medium text-muted-foreground">
+                Tidak Hadir
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
       {/* Recent Activity */}
       <div>
         <div className="mb-3 flex items-center justify-between px-1">
-          <h3 className="text-sm font-semibold text-foreground">Aktivitas Terbaru</h3>
-          <button 
-            type="button" 
+          <h3 className="text-sm font-semibold text-foreground">
+            Aktivitas Terbaru
+          </h3>
+          <button
+            type="button"
             onClick={onViewAllActivity}
             className="flex items-center gap-1 text-xs text-success hover:underline"
           >
@@ -190,10 +280,14 @@ export function HomeTab({ onViewAllActivity }: HomeTabProps) {
                   {getStatusIcon(activity.status)}
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Badge className={`${typeInfo.color} text-[10px] font-medium`}>
+                      <Badge
+                        className={`${typeInfo.color} text-[10px] font-medium`}
+                      >
                         {typeInfo.label}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">{activity.date}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {activity.date}
+                      </span>
                     </div>
                   </div>
                   <span className="font-mono text-sm font-medium text-foreground">
