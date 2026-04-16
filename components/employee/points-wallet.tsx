@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -11,115 +11,70 @@ import {
   ArrowLeft,
   Crown,
   Medal,
+  Ticket
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { useSession } from 'next-auth/react';
 
 interface PointsWalletProps {
   onBack: () => void;
 }
+interface Transaction {
+  id: number;
+  user_id: number;
+  type_transaksi: 'REWARD' | 'PENALTY' | 'SPEND';
+  jumlah_point: number;
+  point_saat_ini: number;
+  keterangan: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// Mock data
-const transactionHistory = [
-  { id: 1, title: 'Hadir Tepat Waktu', date: '2026-04-15', amount: 50, type: 'earn' },
-  { id: 2, title: 'Terlambat > 15 menit', date: '2026-04-14', amount: -10, type: 'deduct' },
-  { id: 3, title: 'Bonus Kinerja', date: '2026-04-13', amount: 100, type: 'earn' },
-  { id: 4, title: 'Redeem: Late Tolerance Voucher', date: '2026-04-12', amount: -250, type: 'spend' },
-  { id: 5, title: 'Hadir Tepat Waktu', date: '2026-04-11', amount: 50, type: 'earn' },
-  { id: 6, title: 'Tidak Hadir', date: '2026-04-10', amount: -50, type: 'deduct' },
-  { id: 7, title: 'Bonus Asisten', date: '2026-04-09', amount: 75, type: 'earn' },
-  { id: 8, title: 'Hadir Tepat Waktu', date: '2026-04-08', amount: 50, type: 'earn' },
-];
+interface LeaderboardUser {
+  id: number;
+  nama: string;
+  point_karyawan: number;
+  rank: number;
+  rank_badge: 'gold' | 'silver' | 'bronze' | 'default';
+  isUser?: boolean;
+}
+interface ShopItem {
+  id: number;
+  item_nama: string;
+  item_deskripsi: string;
+  item_harga: number;
+  icon: string;
+  type_stock: 'PER_USER' | "GLOBAL";
+  stok_limit: number;
+  
+}
+interface InventoryItem {
+  id_item: number;
+  item_nama: string;
+  diperoleh: string;
+  expiresIn: number;
+  status: 'AKTIF' | 'TELAH DIGUNAKAN' | 'EXPIRED';
+  icon: string;
+}
 
-const leaderboard = [
-  { id: 1, name: 'Ahmad Wijaya', points: 3250, rank: 1, rank_badge: 'gold' },
-  { id: 2, name: 'Siti Nurhaliza', points: 3120, rank: 2, rank_badge: 'silver' },
-  { id: 3, name: 'Budi Santoso', points: 3005, rank: 3, rank_badge: 'bronze' },
-  { id: 4, name: 'Rina Kusuma', points: 2890, rank: 4, rank_badge: 'default' },
-  { id: 5, name: 'Taufik Rahman', points: 2750, rank: 5, rank_badge: 'default' },
-  { id: 6, name: 'Rifki Muhammad Fadhil', points: 1250, rank: 6, rank_badge: 'default', isUser: true },
-  { id: 7, name: 'Dian Pratama', points: 1100, rank: 7, rank_badge: 'default' },
-  { id: 8, name: 'Linda Wijaya', points: 980, rank: 8, rank_badge: 'default' },
-  { id: 9, name: 'Reza Firmansyah', points: 850, rank: 9, rank_badge: 'default' },
-  { id: 10, name: 'Maya Susanti', points: 720, rank: 10, rank_badge: 'default' },
-];
 
-const shopItems = [
-  {
-    id: 1,
-    title: 'Late Tolerance Voucher',
-    description: 'Dapat terlambat 15 menit tanpa penalti',
-    price: 250,
-    icon: '🎟️',
-  },
-  {
-    id: 2,
-    title: 'Early Leave Pass',
-    description: 'Izin pulang 30 menit lebih awal',
-    price: 300,
-    icon: '🚪',
-  },
-  {
-    id: 3,
-    title: 'Flex Time Day',
-    description: 'Jam masuk fleksibel selama sehari',
-    price: 400,
-    icon: '⏰',
-  },
-  {
-    id: 4,
-    title: 'Work from Home Pass',
-    description: 'Hak untuk bekerja dari rumah selama sehari',
-    price: 350,
-    icon: '🏠',
-  },
-  {
-    id: 5,
-    title: 'Bonus Break Time',
-    description: 'Tambahan istirahat 30 menit',
-    price: 150,
-    icon: '☕',
-  },
-  {
-    id: 6,
-    title: 'Priority Support Badge',
-    description: 'Badge khusus di sistem (dekoratif)',
-    price: 500,
-    icon: '⭐',
-  },
-];
-
-const inventoryItems = [
-  {
-    id: 1,
-    title: 'Late Tolerance Voucher',
-    acquired: '2026-04-12',
-    expiresIn: 25,
-    status: 'active',
-    icon: '🎟️',
-  },
-  {
-    id: 2,
-    title: 'Early Leave Pass',
-    acquired: '2026-03-20',
-    expiresIn: 35,
-    status: 'active',
-    icon: '🚪',
-  },
-  {
-    id: 3,
-    title: 'Work from Home Pass',
-    acquired: '2026-03-10',
-    expiresIn: 1,
-    status: 'expiring_soon',
-    icon: '🏠',
-  },
-];
 
 export function PointsWallet({ onBack }: PointsWalletProps) {
   const [selectedTab, setSelectedTab] = useState('history');
+  const [history, setHistory] = useState<Transaction[]>([]); 
+  const [ranking, setRanking] = useState<LeaderboardUser[]>([]);
+  const [katalog, setKatalog] = useState<ShopItem[]>([]);
+  const [Inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [points, setPoints] = useState<number>(0);
+  const { data: session } = useSession();
+
+  // Mencari index user yang login di dalam array ranking
+const userRankIndex = ranking.findIndex((user) => user.isUser);
+// Jika ketemu (index tidak -1), tambahkan 1. Jika tidak ada, kasih tanda '-'
+const myRank = userRankIndex !== -1 ? userRankIndex + 1 : '-';
 
   const getRankIcon = (badge: string) => {
     switch (badge) {
@@ -134,6 +89,108 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
     }
   };
 
+  let getHistory = async () => {
+    const userId = session?.user?.id;
+    try {
+      const res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/get-riwayat-point?user_id=${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true', 
+          },
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+      setHistory(data.data);
+      setPoints(data.point_saat_ini);
+      }
+    } catch (error) {
+    console.error('Error fetching history:', error);
+    }
+  }
+  let getKatalog = async () => {
+    try {
+      let res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/get-katalog`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+      let data = await res.json();
+      if (res.ok) {
+        setKatalog(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching catalog:', error);
+    }
+  }
+  let getToken = async () => {
+    const userId = session?.user?.id;
+    try {
+      let res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/get-karyawan-token?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+      let data = await res.json();
+      if (res.ok) {
+        setInventory(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching catalog:', error);
+    }
+  }
+
+  let getRanking = async () => {
+    try {
+      const res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/get-ranking`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        // MAPPING DATA DI SINI
+        const mappedRanking: LeaderboardUser[] = data.data.map((item: any, index: number) => {
+          const rank = index + 1;
+          let badge: 'gold' | 'silver' | 'bronze' | 'default' = 'default';
+          
+          if (rank === 1) badge = 'gold';
+          else if (rank === 2) badge = 'silver';
+          else if (rank === 3) badge = 'bronze';
+
+          return {
+            id: item.id,
+            nama: item.nama,
+            point_karyawan: item.point_karyawan,
+            rank: rank, 
+            rank_badge: badge, 
+            isUser: item.id === Number(session?.user?.karyawan?.id), 
+          };
+        });
+
+        setRanking(mappedRanking);
+      }
+    } catch (error) {
+      console.error('Error fetching ranking:', error);
+    }
+  };
+  useEffect(() => {
+    if (session?.user?.id) {
+      getHistory();
+      getRanking();
+      getKatalog();
+      getToken();
+    }
+  }, [session?.user?.id]);
   return (
     <div className="flex flex-col gap-5 pb-24">
       {/* Back Button */}
@@ -159,7 +216,7 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
               </p>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="text-4xl font-extrabold text-amber-400">
-                  1.250
+                  {points}
                 </span>
                 <span className="text-lg font-bold text-amber-500/80">PTS</span>
               </div>
@@ -179,7 +236,7 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                 </p>
                 <div className="flex items-baseline gap-2 justify-end">
                   <span className="text-2xl font-extrabold text-foreground">
-                    #6
+                    #{myRank}
                   </span>
                   <span className="text-xs text-success flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" /> 2 ↑
@@ -216,15 +273,15 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
 
         {/* Tab 1: History */}
         <TabsContent value="history" className="mt-4 space-y-3">
-          {transactionHistory.map((transaction) => {
-            const isPositive = transaction.type === 'earn';
-            const isNeutral = transaction.type === 'spend';
+          {history.map((transaction) => {
+            const isPositive = transaction.type_transaksi === 'REWARD';
+            const isNeutral = transaction.type_transaksi === 'SPEND';
             const amountColor = isPositive
               ? 'text-success'
               : isNeutral
                 ? 'text-amber-500'
                 : 'text-destructive';
-            const amountSign = transaction.amount > 0 ? '+' : '';
+            const amountSign = transaction.jumlah_point > 0 ? '+' : '';
 
             return (
               <Card key={transaction.id} className="border-border/50 bg-card/50">
@@ -241,17 +298,17 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {transaction.title}
+                      {transaction.keterangan}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(transaction.date).toLocaleDateString('id-ID')}
+                      {new Date(transaction.createdAt).toLocaleDateString('id-ID')}
                     </p>
                   </div>
 
                   {/* Amount */}
                   <div className={`text-right font-bold ${amountColor} text-sm`}>
                     {amountSign}
-                    {transaction.amount}
+                    {transaction.jumlah_point}
                   </div>
                 </CardContent>
               </Card>
@@ -261,7 +318,7 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
 
         {/* Tab 2: Ranking */}
         <TabsContent value="ranking" className="mt-4 space-y-2">
-          {leaderboard.map((user) => (
+          {ranking.map((user) => (
             <Card
               key={user.id}
               className={`border-border/50 ${user.isUser ? 'bg-gradient-to-r from-success/10 to-transparent border-success/30' : 'bg-card/50'}`}
@@ -282,7 +339,7 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {user.name}
+                      {user.nama}
                     </p>
                     {user.isUser && (
                       <Badge className="bg-success/20 text-success text-[10px] ml-auto sm:ml-0">
@@ -291,14 +348,14 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {user.points.toLocaleString('id-ID')} PTS
+                    {user.point_karyawan} PTS
                   </p>
                 </div>
 
                 {/* Points Display */}
                 {!user.isUser && (
                   <div className="text-right text-sm font-bold text-amber-500">
-                    {user.points.toLocaleString('id-ID')}
+                    {user.point_karyawan}
                   </div>
                 )}
               </CardContent>
@@ -309,7 +366,7 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
         {/* Tab 3: Shop */}
         <TabsContent value="shop" className="mt-4">
           <div className="grid grid-cols-2 gap-3">
-            {shopItems.map((item) => (
+            {katalog.map((item) => (
               <Card key={item.id} className="border-border/50 bg-card/50 overflow-hidden hover:border-amber-500/30 transition-colors">
                 <CardContent className="p-4 flex flex-col h-full">
                   {/* Icon */}
@@ -317,16 +374,16 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
 
                   {/* Content */}
                   <h3 className="text-xs sm:text-sm font-semibold text-foreground mb-1 line-clamp-2">
-                    {item.title}
+                    {item.item_nama}
                   </h3>
                   <p className="text-[10px] text-muted-foreground mb-3 flex-1 line-clamp-2">
-                    {item.description}
+                    {item.item_deskripsi}
                   </p>
 
                   {/* Price */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs sm:text-sm font-bold text-amber-500">
-                      {item.price} PTS
+                      {item.item_harga} PTS
                     </span>
                     <Button
                       size="sm"
@@ -344,11 +401,11 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
 
         {/* Tab 4: Inventory */}
         <TabsContent value="inventory" className="mt-4 space-y-3">
-          {inventoryItems.length > 0 ? (
-            inventoryItems.map((item) => (
+          {Inventory.length > 0 ? (
+            Inventory.map((item) => (
               <Card
-                key={item.id}
-                className={`border-border/50 ${item.status === 'expiring_soon' ? 'border-warning/30 bg-warning/5' : 'bg-card/50'}`}
+                key={item.id_item}
+                className={`border-border/50 ${item.status === 'EXPIRED' ? 'border-warning/30 bg-warning/5' : 'bg-card/50'}`}
               >
                 <CardContent className="p-4 flex items-start gap-4">
                   {/* Icon */}
@@ -358,9 +415,9 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-sm font-semibold text-foreground">
-                        {item.title}
+                        {item.item_nama}
                       </h3>
-                      {item.status === 'expiring_soon' && (
+                      {item.status === 'EXPIRED' && (
                         <Badge className="bg-warning/20 text-warning text-[10px] ml-auto sm:ml-0 shrink-0">
                           Kadaluarsa
                         </Badge>
@@ -368,12 +425,12 @@ export function PointsWallet({ onBack }: PointsWalletProps) {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Diperoleh:{' '}
-                      {new Date(item.acquired).toLocaleDateString('id-ID')}
+                      {new Date(item.diperoleh).toLocaleDateString('id-ID')}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div
-                          className={`h-full ${item.status === 'expiring_soon' ? 'bg-warning' : 'bg-success'}`}
+                          className={`h-full ${item.status === 'EXPIRED' ? 'bg-warning' : 'bg-success'}`}
                           style={{
                             width: `${Math.min(100, (item.expiresIn / 30) * 100)}%`,
                           }}
