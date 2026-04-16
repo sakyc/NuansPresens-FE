@@ -115,7 +115,7 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
       const result = await res.json();
 
       if (res.ok) {
-        console.log("Poin Berhasil diambil:", result.data);
+        console.log("Poin Berhasil diambil:",session);
         setPoints(result.data? result.data : 0); 
       }
     } catch (error) {
