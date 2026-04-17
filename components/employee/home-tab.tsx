@@ -39,9 +39,14 @@ interface HomeTabProps {
   onViewPointsWallet?: () => void;
 }
 
+interface userPoints {
+  point_karyawan: number;
+  rank: number;
+}
+
 export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [points, setPoints] = useState(0);
+  const [points, setPoints] = useState<userPoints | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -186,7 +191,7 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
                 {/* Bagian Poin */}
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold leading-none mb-1">Point Karyawan</p>
                 <div className="flex items-center justify-end gap-1 mb-1">
-                  <span className="text-sm font-extrabold text-amber-500">{points}</span>
+                  <span className="text-sm font-extrabold text-amber-500">{points?.point_karyawan}</span>
                   <span className="text-[10px] font-medium text-amber-500/80">PTS</span>
                 </div>
                 
@@ -194,7 +199,7 @@ export function HomeTab({ onViewAllActivity, onViewPointsWallet }: HomeTabProps)
                 <div className="flex items-center justify-end gap-1.5">
                   <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-800 text-[9px] px-1.5 py-0 h-4 flex gap-1 items-center">
                     <TrendingUp className="h-2.5 w-2.5 text-success" />
-                    RANK #4
+                    RANK #{points?.rank}
                   </Badge>
                   <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                 </div>
