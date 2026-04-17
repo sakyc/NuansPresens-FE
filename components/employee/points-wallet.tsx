@@ -401,71 +401,91 @@ const myRank = userRankIndex !== -1 ? userRankIndex + 1 : '-';
 
         {/* Tab 4: Inventory */}
         <TabsContent value="inventory" className="mt-4 space-y-3">
-          {Inventory.length > 0 ? (
-            Inventory.map((item) => (
-              <Card
-                key={item.id_item}
-                className={`border-border/50 ${item.status === 'EXPIRED' ? 'border-warning/30 bg-warning/5' : 'bg-card/50'}`}
-              >
-                <CardContent className="p-4 flex items-start gap-4">
-                  {/* Icon */}
-                  <div className="text-2xl min-w-fit">{item.icon}</div>
+  {Inventory.length > 0 ? (
+    Inventory.map((item) => {
+      // Logic Validasi Status Otomatis
+      const isUsed = item.status === 'TELAH DIGUNAKAN';
+      const isExpired = !isUsed && (item.expiresIn < 0 || item.status === 'EXPIRED');
+      const isActive = item.status === 'AKTIF' && !isExpired;
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-foreground">
-                        {item.item_nama}
-                      </h3>
-                      {item.status === 'EXPIRED' && (
-                        <Badge className="bg-warning/20 text-warning text-[10px] ml-auto sm:ml-0 shrink-0">
-                          Kadaluarsa
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Diperoleh:{' '}
-                      {new Date(item.diperoleh).toLocaleDateString('id-ID')}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${item.status === 'EXPIRED' ? 'bg-warning' : 'bg-success'}`}
-                          style={{
-                            width: `${Math.min(100, (item.expiresIn / 30) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {item.expiresIn} hari
-                      </span>
-                    </div>
+      // Logic Warna Outline & Background
+      let cardStyle = "border-border/50 bg-card/50"; // Default
+      if (isExpired) cardStyle = "border-destructive/50 bg-destructive/5"; // Merah
+      if (isUsed) cardStyle = "border-warning/50 bg-warning/5"; // Kuning/Orange
+      if (isActive) cardStyle = "border-success/50 bg-success/5"; // Hijau
+
+      return (
+        <Card key={item.id_item} className={`border-2 transition-all ${cardStyle}`}>
+          <CardContent className="p-4 flex items-start gap-4">
+            {/* Icon */}
+            <div className="text-2xl min-w-fit">{item.icon}</div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm font-semibold text-foreground truncate">
+                  {item.item_nama}
+                </h3>
+                
+                {/* Badge Status Dinamis */}
+                <div className="flex gap-1 shrink-0">
+                  {isExpired ? (
+                    <Badge variant="outline" className="border-destructive text-destructive text-[10px]">
+                      Kadaluarsa
+                    </Badge>
+                  ) : isUsed ? (
+                    <Badge variant="outline" className="border-warning text-warning text-[10px]">
+                      Terpakai
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-success text-success text-[10px]">
+                      Aktif
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground mt-1">
+                Diperoleh: {new Date(item.diperoleh).toLocaleDateString('id-ID')}
+              </p>
+
+              {/* Progress Bar (Hanya muncul jika belum terpakai & belum expired) */}
+              {!isUsed && (
+                <div className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all ${isExpired ? 'bg-destructive' : 'bg-success'}`}
+                      style={{
+                        width: `${Math.max(0, Math.min(100, (item.expiresIn / 30) * 100))}%`,
+                      }}
+                    />
                   </div>
-
-                  {/* Action Button */}
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-success hover:bg-success/90 ml-auto sm:ml-0"
-                  >
-                    Gunakan
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <Card className="border-border/50 bg-card/50">
-              <CardContent className="p-8 text-center">
-                <Gift className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-50" />
-                <p className="text-sm text-muted-foreground">
-                  Belum ada item di inventori
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    {isExpired ? '0' : item.expiresIn} hari lagi
+                  </span>
+                </div>
+              )}
+              
+              {isUsed && (
+                <p className="text-[10px] text-warning mt-2 italic">
+                  * Otomatis digunakan saat presensi
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Belanja di toko untuk mendapatkan item
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    })
+  ) : (
+    /* Empty State Tetap Sama */
+    <Card className="border-border/50 bg-card/50">
+      <CardContent className="p-8 text-center">
+        <Gift className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+        <p className="text-sm text-muted-foreground">Belum ada item di inventori</p>
+      </CardContent>
+    </Card>
+  )}
+</TabsContent>
       </Tabs>
     </div>
   );
