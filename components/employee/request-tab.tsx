@@ -181,7 +181,7 @@ export function RequestTab({ onViewAllHistory }: RequestTabProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            karyawan_id: session?.user?.id,
+            karyawan_id: session?.user?.karyawan?.id,
             shift_id: session?.user?.karyawan?.shift?.id,
             kategory_absensi_id: dataPengajuan.id,
             tanggal_mulai: date,
