@@ -89,6 +89,33 @@ const myRank = userRankIndex !== -1 ? userRankIndex + 1 : '-';
     }
   };
 
+  let handlePurchase = async (itemId: number) => {
+    try {
+      const userId = session?.user?.id;
+      const res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/redeem-point`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          item_id: itemId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Pembelian berhasil!');
+        getHistory(); // Refresh history setelah pembelian
+        getToken(); // Refresh inventory setelah pembelian
+      } else {
+        alert(`Pembelian gagal: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error during purchase:', error);
+      alert('Terjadi kesalahan saat melakukan pembelian');
+    }
+  }
   let getHistory = async () => {
     const userId = session?.user?.id;
     try {
@@ -386,6 +413,7 @@ const myRank = userRankIndex !== -1 ? userRankIndex + 1 : '-';
                       {item.item_harga} PTS
                     </span>
                     <Button
+                      onClick={() => handlePurchase(item.id)}
                       size="sm"
                       variant="outline"
                       className="h-7 text-[10px] sm:text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:border-amber-500/50"
