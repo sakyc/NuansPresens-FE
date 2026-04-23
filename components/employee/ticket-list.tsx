@@ -19,8 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { useSession } from "next-auth/react";
-import { toast } from "sonner"; // Atau ganti ke library toast yang kamu pakai
-
+import { toast } from "sonner"; // Pastikan sudah install: npm install sonner
+const notify = {
+  success: (msg: string) => toast.success(msg),
+  error: (msg: string) => toast.error(msg),
+  warning: (msg: string) => toast.warning(msg),
+};
 export interface Ticket {
   id: number;
   subject: string;
@@ -60,20 +64,21 @@ export function TicketList({ onBack, onSelectTicket }: any) {
       }
     } catch (error) {
       console.error('Error fetching tickets:', error);
+      toast.error("Gagal mengambil daftar tiket.");
     }
   };
 
   useEffect(() => { 
+    console.log("Session data:", session); // Debug session
     getKatalog(); 
   }, [session]);
 
-  const handleCreateTicket = async () => {
-    // Validasi sederhana sebelum kirim
+const handleCreateTicket = async () => {
     if (!newTicket.subject.trim() || !newTicket.deskripsi.trim()) {
-      toast.error("Subjek dan deskripsi wajib diisi!");
+      alert("Harap isi subjek dan deskripsi!");
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/tiket`, {
@@ -91,22 +96,20 @@ export function TicketList({ onBack, onSelectTicket }: any) {
 
       const result = await res.json();
 
-      if (res.ok) {
-        // BERHASIL
-        toast.success("Tiket berhasil dibuat!");
-        setIsCreatingTicket(false); 
-        setNewTicket({ subject: "", deskripsi: "" }); 
-        
-        // Langsung masukkan ke daftar agar tidak perlu refresh manual
-        setTickets((prev) => [result, ...prev]);
-      } else {
-        // GAGAL DARI SERVER
-        toast.error(result.message || "Gagal membuat tiket di server.");
+      if (!res.ok) {
+        // Langsung munculin alert dari pesan API ("Anda sudah mengirim...")
+        alert(result.message || "Gagal membuat tiket.");
+        return;
       }
+
+      // Berhasil
+      alert("Tiket berhasil terkirim!");
+      setIsCreatingTicket(false); 
+      setNewTicket({ subject: "", deskripsi: "" }); 
+      setTickets((prev) => [result, ...prev]);
+
     } catch (error) {
-      // GAGAL KONEKSI/JARINGAN
-      console.error("Gagal membuat tiket:", error);
-      toast.error("Koneksi gagal. Pastikan API ngrok aktif.");
+      alert("Koneksi gagal!");
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +117,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
 
   return (
     <div className="flex flex-col gap-5 pb-24">
+      {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <button 
           type="button"
@@ -125,9 +129,10 @@ export function TicketList({ onBack, onSelectTicket }: any) {
         <h2 className="flex-1 text-lg font-bold text-foreground">Pusat Bantuan & Tiket</h2>
       </div>
 
+      {/* Modal Dialog */}
       <Dialog open={isCreatingTicket} onOpenChange={setIsCreatingTicket}>
         <DialogTrigger asChild>
-          <Button className="w-full gap-2 rounded-xl bg-success/90 py-6 text-foreground hover:bg-success">
+          <Button className="w-full gap-2 rounded-xl bg-success/90 py-6 text-foreground hover:bg-success transition-all active:scale-95">
             <Plus className="h-5 w-5" /> Buat Tiket Baru
           </Button>
         </DialogTrigger>
@@ -139,7 +144,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
             <Field>
               <FieldLabel>Subjek / Judul</FieldLabel>
               <Input
-                placeholder="Apa masalahnya?"
+                placeholder="Contoh: Eror Fingerprint"
                 value={newTicket.subject}
                 onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
                 className="rounded-xl"
@@ -149,7 +154,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
             <Field>
               <FieldLabel>Deskripsi Lengkap</FieldLabel>
               <Textarea
-                placeholder="Ceritakan detail kendala Anda..."
+                placeholder="Ceritakan detail kendala Anda agar admin mudah memahami..."
                 value={newTicket.deskripsi}
                 onChange={(e) => setNewTicket({ ...newTicket, deskripsi: e.target.value })}
                 className="rounded-xl min-h-[100px]"
@@ -163,16 +168,17 @@ export function TicketList({ onBack, onSelectTicket }: any) {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Mengirim...
+                  <Loader2 className="h-4 w-4 animate-spin" /> Sedang Mengirim...
                 </>
               ) : (
-                "Buat Tiket Sekarang"
+                "Kirim Tiket"
               )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* List Tiket */}
       <div className="flex flex-col gap-3">
         {tickets.length > 0 ? (
           tickets.map((ticket) => {
@@ -182,7 +188,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
                 key={ticket.id}
                 type="button"
                 onClick={() => onSelectTicket(ticket)}
-                className="flex w-full items-center gap-4 rounded-xl border border-border/50 bg-card p-4 transition-colors hover:bg-accent/30"
+                className="flex w-full items-center gap-4 rounded-xl border border-border/50 bg-card p-4 transition-all hover:bg-accent/30 active:scale-[0.98]"
               >
                 <div className="rounded-lg bg-accent p-2.5">
                   <MessageSquare className="h-5 w-5 text-foreground" />
@@ -190,10 +196,10 @@ export function TicketList({ onBack, onSelectTicket }: any) {
                 <div className="flex-1 text-left">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-foreground line-clamp-1 text-sm">{ticket.subject}</h3>
-                    <Badge className={`${config.color} text-[9px] px-2 py-0 font-normal`}>{config.label}</Badge>
+                    <Badge className={`${config.color} text-[9px] px-2 py-0 font-normal border-none`}>{config.label}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{ticket.deskripsi}</p>
-                  <div className="mt-2 text-[10px] text-muted-foreground font-medium">
+                  <div className="mt-2 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
                     {new Date(ticket.createdAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'short',
@@ -201,16 +207,16 @@ export function TicketList({ onBack, onSelectTicket }: any) {
                     })}
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground/50" />
               </button>
             )
           })
         ) : (
-          <Card className="border-border/50 border-dashed">
+          <Card className="border-border/50 border-dashed bg-transparent">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/30" />
-              <p className="text-sm font-medium text-muted-foreground">Belum ada tiket bantuan</p>
-              <p className="text-xs text-muted-foreground/70">Klik tombol di atas untuk membuat tiket.</p>
+              <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/20" />
+              <p className="text-sm font-medium text-muted-foreground">Belum ada riwayat tiket</p>
+              <p className="text-xs text-muted-foreground/60">Kendala yang Anda laporkan akan muncul di sini.</p>
             </CardContent>
           </Card>
         )}
