@@ -1,0 +1,116 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { BottomNavigation, type TabType } from "./bottom-navigation";
+import { HomeTab } from "./home-tab";
+import { ScanTab } from "./scan-tab";
+import { RequestTab } from "./request-tab";
+import { ProfileTab } from "./profile-tab";
+import { ActivityHistory } from "./activity-history";
+import { RequestHistory } from "./request-history";
+import { PointsWallet } from "./points-wallet";
+import { TicketList, type Ticket } from "./ticket-list";
+import { TicketChat } from "./ticket-chat";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+type ViewType = "main" | "activity-history" | "request-history" | "points-wallet" | "ticket-list" | "ticket-chat";
+
+export function EmployeeApp() {
+  const {push} = useRouter()
+  const {data: seession, status} = useSession()
+
+  useEffect(() => {
+    if(status === "unauthenticated" ){
+      push('/login')
+    }
+  })
+
+
+  const [activeTab, setActiveTab] = useState<TabType>("home");
+  const [currentView, setCurrentView] = useState<ViewType>("main");
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  const getPageTitle = () => {
+    if (currentView === "activity-history") return "Riwayat Aktivitas";
+    if (currentView === "request-history") return "Riwayat Pengajuan";
+    if (currentView === "points-wallet") return "Dompet Poin & Integritas";
+    if (currentView === "ticket-list") return "Pusat Bantuan & Tiket";
+    if (currentView === "ticket-chat") return "Chat Tiket";
+    // beres 
+    switch (activeTab) {
+      case "home":
+        return "Beranda";
+      case "scan":
+        return "Scan QR";
+      case "request":
+        return "Pengajuan";
+      case "profile":
+        return "Profil";
+    }
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setCurrentView("main");
+  };
+
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-card/95 backdrop-blur-lg safe-area-top">
+        <div className="mx-auto flex h-14 max-w-md items-center justify-center px-4">
+          <h1 className="text-base font-semibold text-foreground">{getPageTitle()}</h1>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-md px-2">
+          {currentView === "activity-history" && (
+            <ActivityHistory onBack={() => setCurrentView("main")} />
+          )}
+          {currentView === "request-history" && (
+            <RequestHistory onBack={() => setCurrentView("main")} />
+          )}
+          {currentView === "points-wallet" && (
+            <PointsWallet onBack={() => setCurrentView("main")} />
+          )}
+          {currentView === "ticket-list" && (
+            <TicketList 
+              onBack={() => setCurrentView("main")}
+              onSelectTicket={(ticket) => {
+                setSelectedTicket(ticket);
+                setCurrentView("ticket-chat");
+              }}
+            />
+          )}
+          {currentView === "ticket-chat" && selectedTicket && (
+            <TicketChat 
+              ticket={selectedTicket}
+              onBack={() => setCurrentView("ticket-list")}
+            />
+          )}
+          {currentView === "main" && (
+            <>
+              {activeTab === "home" && (
+                <HomeTab 
+                  onViewAllActivity={() => setCurrentView("activity-history")}
+                  onViewPointsWallet={() => setCurrentView("points-wallet")}
+                />
+              )}
+              {activeTab === "scan" && <ScanTab />}
+              {activeTab === "request" && (
+                <RequestTab onViewAllHistory={() => setCurrentView("request-history")} />
+              )}
+              {activeTab === "profile" && <ProfileTab onViewHelp={() => setCurrentView("ticket-list")} />}
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+    </div>
+  );
+}
