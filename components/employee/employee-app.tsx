@@ -9,10 +9,12 @@ import { ProfileTab } from "./profile-tab";
 import { ActivityHistory } from "./activity-history";
 import { RequestHistory } from "./request-history";
 import { PointsWallet } from "./points-wallet";
+import { TicketList, type Ticket } from "./ticket-list";
+import { TicketChat } from "./ticket-chat";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-type ViewType = "main" | "activity-history" | "request-history" | "points-wallet";
+type ViewType = "main" | "activity-history" | "request-history" | "points-wallet" | "ticket-list" | "ticket-chat";
 
 export function EmployeeApp() {
   const {push} = useRouter()
@@ -27,11 +29,14 @@ export function EmployeeApp() {
 
   const [activeTab, setActiveTab] = useState<TabType>("home");
   const [currentView, setCurrentView] = useState<ViewType>("main");
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const getPageTitle = () => {
     if (currentView === "activity-history") return "Riwayat Aktivitas";
     if (currentView === "request-history") return "Riwayat Pengajuan";
     if (currentView === "points-wallet") return "Dompet Poin & Integritas";
+    if (currentView === "ticket-list") return "Pusat Bantuan & Tiket";
+    if (currentView === "ticket-chat") return "Chat Tiket";
     // beres 
     switch (activeTab) {
       case "home":
@@ -71,6 +76,21 @@ export function EmployeeApp() {
           {currentView === "points-wallet" && (
             <PointsWallet onBack={() => setCurrentView("main")} />
           )}
+          {currentView === "ticket-list" && (
+            <TicketList 
+              onBack={() => setCurrentView("main")}
+              onSelectTicket={(ticket) => {
+                setSelectedTicket(ticket);
+                setCurrentView("ticket-chat");
+              }}
+            />
+          )}
+          {currentView === "ticket-chat" && selectedTicket && (
+            <TicketChat 
+              ticket={selectedTicket}
+              onBack={() => setCurrentView("ticket-list")}
+            />
+          )}
           {currentView === "main" && (
             <>
               {activeTab === "home" && (
@@ -83,7 +103,7 @@ export function EmployeeApp() {
               {activeTab === "request" && (
                 <RequestTab onViewAllHistory={() => setCurrentView("request-history")} />
               )}
-              {activeTab === "profile" && <ProfileTab />}
+              {activeTab === "profile" && <ProfileTab onViewHelp={() => setCurrentView("ticket-list")} />}
             </>
           )}
         </div>
