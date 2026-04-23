@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -9,6 +9,7 @@ import {
   AlertCircle,
   MessageSquare,
   ChevronRight,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,105 +18,106 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
-
-export type TicketStatus = "open" | "in-progress" | "closed";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner"; // Atau ganti ke library toast yang kamu pakai
 
 export interface Ticket {
-  id: string;
-  title: string;
+  id: number;
   subject: string;
-  status: TicketStatus;
+  deskripsi: string;
+  status: string;
+  prioritas: string;
   createdAt: string;
-  messages: number;
-  description?: string;
 }
 
-interface TicketListProps {
-  onBack: () => void;
-  onSelectTicket: (ticket: Ticket) => void;
-}
-
-const mockTickets: Ticket[] = [
-  {
-    id: "TKT-001",
-    title: "Masalah Login",
-    subject: "Tidak bisa login ke aplikasi",
-    status: "open",
-    createdAt: "2024-04-20",
-    messages: 2,
-    description: "Saya tidak bisa login ke aplikasi, selalu mendapat error",
-  },
-  {
-    id: "TKT-002",
-    title: "Reset Password",
-    subject: "Permintaan reset password",
-    status: "in-progress",
-    createdAt: "2024-04-18",
-    messages: 5,
-    description: "Butuh bantuan untuk reset password akun saya",
-  },
-  {
-    id: "TKT-003",
-    title: "Laporan Absensi",
-    subject: "Koreksi data absensi",
-    status: "closed",
-    createdAt: "2024-04-15",
-    messages: 8,
-    description: "Permintaan koreksi data absensi bulan Maret",
-  },
-];
-
-const statusConfig = {
-  open: {
-    label: "Dibuka",
-    color: "bg-warning/20 text-warning",
-    icon: AlertCircle,
-  },
-  "in-progress": {
-    label: "Diproses",
-    color: "bg-info/20 text-info",
-    icon: Clock,
-  },
-  closed: {
-    label: "Ditutup",
-    color: "bg-success/20 text-success",
-    icon: CheckCircle2,
-  },
+const statusConfig: any = {
+  Open: { label: "Dibuka", color: "bg-warning/20 text-warning", icon: AlertCircle },
+  "In-Progress": { label: "Diproses", color: "bg-info/20 text-info", icon: Clock },
+  Closed: { label: "Ditutup", color: "bg-success/20 text-success", icon: CheckCircle2 },
 };
 
-export function TicketList({ onBack, onSelectTicket }: TicketListProps) {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+export function TicketList({ onBack, onSelectTicket }: any) {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { data: session } = useSession();
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
-  const [newTicket, setNewTicket] = useState({
-    title: "",
-    subject: "",
-    description: "",
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [newTicket, setNewTicket] = useState({ subject: "", deskripsi: "" });
 
-  const handleCreateTicket = () => {
-    if (newTicket.title && newTicket.subject) {
-      const ticket: Ticket = {
-        id: `TKT-${String(tickets.length + 1).padStart(3, "0")}`,
-        title: newTicket.title,
-        subject: newTicket.subject,
-        description: newTicket.description,
-        status: "open",
-        createdAt: new Date().toISOString().split("T")[0],
-        messages: 0,
-      };
-      setTickets([ticket, ...tickets]);
-      setNewTicket({ title: "", subject: "", description: "" });
-      setIsCreatingTicket(false);
+  const getKatalog = async () => {
+    let userID = session?.user?.id;
+    if (!userID) return;
+    try {
+      let res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/tiket/${userID}`, {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'ngrok-skip-browser-warning': 'true' 
+        },
+      });
+      let data = await res.json();
+      if (res.ok) {
+        setTickets(data.tickets || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    }
+  };
+
+  useEffect(() => { 
+    getKatalog(); 
+  }, [session]);
+
+  const handleCreateTicket = async () => {
+    // Validasi sederhana sebelum kirim
+    if (!newTicket.subject.trim() || !newTicket.deskripsi.trim()) {
+      toast.error("Subjek dan deskripsi wajib diisi!");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/tiket`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({
+          userId: session?.user?.id,
+          subject: newTicket.subject,
+          deskripsi: newTicket.deskripsi,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        // BERHASIL
+        toast.success("Tiket berhasil dibuat!");
+        setIsCreatingTicket(false); 
+        setNewTicket({ subject: "", deskripsi: "" }); 
+        
+        // Langsung masukkan ke daftar agar tidak perlu refresh manual
+        setTickets((prev) => [result, ...prev]);
+      } else {
+        // GAGAL DARI SERVER
+        toast.error(result.message || "Gagal membuat tiket di server.");
+      }
+    } catch (error) {
+      // GAGAL KONEKSI/JARINGAN
+      console.error("Gagal membuat tiket:", error);
+      toast.error("Koneksi gagal. Pastikan API ngrok aktif.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col gap-5 pb-24">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <button
+        <button 
           type="button"
-          onClick={onBack}
+          onClick={onBack} 
           className="rounded-lg p-2 transition-colors hover:bg-accent/50"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -123,112 +125,96 @@ export function TicketList({ onBack, onSelectTicket }: TicketListProps) {
         <h2 className="flex-1 text-lg font-bold text-foreground">Pusat Bantuan & Tiket</h2>
       </div>
 
-      {/* Create Ticket Button */}
       <Dialog open={isCreatingTicket} onOpenChange={setIsCreatingTicket}>
         <DialogTrigger asChild>
           <Button className="w-full gap-2 rounded-xl bg-success/90 py-6 text-foreground hover:bg-success">
-            <Plus className="h-5 w-5" />
-            Buat Tiket Baru
+            <Plus className="h-5 w-5" /> Buat Tiket Baru
           </Button>
         </DialogTrigger>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Buat Tiket Baru</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 py-4">
             <Field>
-              <FieldLabel>Judul Tiket</FieldLabel>
+              <FieldLabel>Subjek / Judul</FieldLabel>
               <Input
-                placeholder="Masukkan judul tiket"
-                value={newTicket.title}
-                onChange={(e) => setNewTicket({ ...newTicket, title: e.target.value })}
-                className="rounded-xl"
-              />
-            </Field>
-            <Field>
-              <FieldLabel>Subjek</FieldLabel>
-              <Input
-                placeholder="Masukkan subjek tiket"
+                placeholder="Apa masalahnya?"
                 value={newTicket.subject}
                 onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
                 className="rounded-xl"
+                disabled={isLoading}
               />
             </Field>
             <Field>
-              <FieldLabel>Deskripsi</FieldLabel>
+              <FieldLabel>Deskripsi Lengkap</FieldLabel>
               <Textarea
-                placeholder="Deskripsikan masalah Anda"
-                value={newTicket.description}
-                onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                className="rounded-xl"
+                placeholder="Ceritakan detail kendala Anda..."
+                value={newTicket.deskripsi}
+                onChange={(e) => setNewTicket({ ...newTicket, deskripsi: e.target.value })}
+                className="rounded-xl min-h-[100px]"
+                disabled={isLoading}
               />
             </Field>
-            <Button
-              onClick={handleCreateTicket}
+            <Button 
+              onClick={handleCreateTicket} 
+              disabled={isLoading || !newTicket.subject || !newTicket.deskripsi}
               className="gap-2 rounded-xl bg-success/90 py-5 hover:bg-success"
             >
-              <Plus className="h-5 w-5" />
-              Buat Tiket
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Mengirim...
+                </>
+              ) : (
+                "Buat Tiket Sekarang"
+              )}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Ticket List */}
       <div className="flex flex-col gap-3">
-        {tickets.map((ticket) => {
-          const config = statusConfig[ticket.status];
-          const StatusIcon = config.icon;
-
-          return (
-            <button
-              key={ticket.id}
-              type="button"
-              onClick={() => onSelectTicket(ticket)}
-              className="flex w-full items-center gap-4 rounded-xl border border-border/50 bg-card p-4 transition-colors hover:bg-accent/30"
-            >
-              {/* Icon */}
-              <div className="flex-shrink-0">
+        {tickets.length > 0 ? (
+          tickets.map((ticket) => {
+            const config = statusConfig[ticket.status] || statusConfig["Open"];
+            return (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => onSelectTicket(ticket)}
+                className="flex w-full items-center gap-4 rounded-xl border border-border/50 bg-card p-4 transition-colors hover:bg-accent/30"
+              >
                 <div className="rounded-lg bg-accent p-2.5">
                   <MessageSquare className="h-5 w-5 text-foreground" />
                 </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{ticket.title}</h3>
-                  <Badge className={`${config.color} text-xs`}>{config.label}</Badge>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-foreground line-clamp-1 text-sm">{ticket.subject}</h3>
+                    <Badge className={`${config.color} text-[9px] px-2 py-0 font-normal`}>{config.label}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{ticket.deskripsi}</p>
+                  <div className="mt-2 text-[10px] text-muted-foreground font-medium">
+                    {new Date(ticket.createdAt).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{ticket.subject}</p>
-                <div className="mt-2 flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{ticket.createdAt}</span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MessageSquare className="h-3 w-3" />
-                    {ticket.messages} pesan
-                  </span>
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-            </button>
-          );
-        })}
+                <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+              </button>
+            )
+          })
+        ) : (
+          <Card className="border-border/50 border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/30" />
+              <p className="text-sm font-medium text-muted-foreground">Belum ada tiket bantuan</p>
+              <p className="text-xs text-muted-foreground/70">Klik tombol di atas untuk membuat tiket.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {/* Empty State */}
-      {tickets.length === 0 && (
-        <Card className="border-border/50">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <MessageSquare className="mb-4 h-12 w-12 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">Belum ada tiket</p>
-            <p className="text-xs text-muted-foreground/75">
-              Buat tiket baru untuk menghubungi tim dukungan kami
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
