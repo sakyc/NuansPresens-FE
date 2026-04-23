@@ -9,7 +9,8 @@ import {
   AlertCircle,
   MessageSquare,
   ChevronRight,
-  Loader2
+  Loader2,
+  User
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { useSession } from "next-auth/react";
-import { toast } from "sonner"; // Atau ganti ke library toast yang kamu pakai
+import { toast } from "sonner";
 
 export interface Ticket {
   id: number;
@@ -28,6 +29,10 @@ export interface Ticket {
   status: string;
   prioritas: string;
   createdAt: string;
+  karyawan?: {
+    id: number;
+    nama: string;
+  };
 }
 
 const statusConfig: any = {
@@ -43,18 +48,26 @@ export function TicketList({ onBack, onSelectTicket }: any) {
   const [isLoading, setIsLoading] = useState(false);
   const [newTicket, setNewTicket] = useState({ subject: "", deskripsi: "" });
 
+  const isOperator = session?.user?.role === "operator";
+
   const getKatalog = async () => {
-    let userID = session?.user?.id;
+    const userID = session?.user?.id;
     if (!userID) return;
+    
     try {
-      let res = await fetch(`https://jeramy-silty-stasia.ngrok-free.dev/api/tiket/${userID}`, {
+      // Operator fetches all tickets, karyawan fetches only their own
+      const endpoint = isOperator 
+        ? `https://jeramy-silty-stasia.ngrok-free.dev/api/tiket`
+        : `https://jeramy-silty-stasia.ngrok-free.dev/api/tiket/${userID}`;
+      
+      const res = await fetch(endpoint, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json', 
           'ngrok-skip-browser-warning': 'true' 
         },
       });
-      let data = await res.json();
+      const data = await res.json();
       if (res.ok) {
         setTickets(data.tickets || []);
       }
@@ -65,7 +78,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
 
   useEffect(() => { 
     getKatalog(); 
-  }, [session]);
+  }, [session, isOperator]);
 
   const handleCreateTicket = async () => {
     // Validasi sederhana sebelum kirim
@@ -125,12 +138,14 @@ export function TicketList({ onBack, onSelectTicket }: any) {
         <h2 className="flex-1 text-lg font-bold text-foreground">Pusat Bantuan & Tiket</h2>
       </div>
 
-      <Dialog open={isCreatingTicket} onOpenChange={setIsCreatingTicket}>
-        <DialogTrigger asChild>
-          <Button className="w-full gap-2 rounded-xl bg-success/90 py-6 text-foreground hover:bg-success">
-            <Plus className="h-5 w-5" /> Buat Tiket Baru
-          </Button>
-        </DialogTrigger>
+      {/* Only show "Buat Tiket Baru" button for non-operators */}
+      {!isOperator && (
+        <Dialog open={isCreatingTicket} onOpenChange={setIsCreatingTicket}>
+          <DialogTrigger asChild>
+            <Button className="w-full gap-2 rounded-xl bg-success/90 py-6 text-foreground hover:bg-success">
+              <Plus className="h-5 w-5" /> Buat Tiket Baru
+            </Button>
+          </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Buat Tiket Baru</DialogTitle>
@@ -172,6 +187,7 @@ export function TicketList({ onBack, onSelectTicket }: any) {
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       <div className="flex flex-col gap-3">
         {tickets.length > 0 ? (
@@ -193,7 +209,14 @@ export function TicketList({ onBack, onSelectTicket }: any) {
                     <Badge className={`${config.color} text-[9px] px-2 py-0 font-normal`}>{config.label}</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{ticket.deskripsi}</p>
-                  <div className="mt-2 text-[10px] text-muted-foreground font-medium">
+                  {/* Show karyawan name for operator view */}
+                  {isOperator && ticket.karyawan && (
+                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-primary font-medium">
+                      <User className="h-3 w-3" />
+                      <span>{ticket.karyawan.nama}</span>
+                    </div>
+                  )}
+                  <div className="mt-1.5 text-[10px] text-muted-foreground font-medium">
                     {new Date(ticket.createdAt).toLocaleDateString('id-ID', {
                       day: 'numeric',
                       month: 'short',
